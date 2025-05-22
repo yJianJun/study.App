@@ -37,4 +37,13 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+    // Retrofit 核心库
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+
+    // 如果需要用 Gson 作为 JSON 序列化/反序列化工具，还需添加以下依赖
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
+    // 如果需要 RxJava 支持（可选）
+    implementation 'com.squareup.retrofit2:adapter-rxjava3:2.9.0'
+
 }
