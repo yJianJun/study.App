@@ -21,9 +21,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.studyapp.request.ScriptResultRequest;
 import com.example.studyapp.service.CloudPhoneManageService;
+import com.example.studyapp.socks.SingBoxLauncher;
+import com.example.studyapp.utils.IpUtil;
 import com.example.studyapp.utils.ShellUtils;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,23 +46,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        vpnRequestLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    startProxyVpnService();
-                } else {
-                    Toast.makeText(this, "VPN setup failed", Toast.LENGTH_SHORT).show();
-                    new AlertDialog.Builder(this)
-                            .setTitle("VPN 配置失败")
-                            .setMessage("未能成功配置 VPN。要重试吗？")
-                            .setPositiveButton("重试", (dialog, which) -> startProxyVpn(this))
-                            .setNegativeButton("取消", null)
-                            .show();
-                }
-            }
-        );
-
         // 检查存储权限
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -68,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
                     REQUEST_CODE_STORAGE_PERMISSION);
         }
 
-        startProxyVpn(this);
 
         // 查找按钮对象
         Button runScriptButton = findViewById(R.id.run_script_button);
@@ -79,18 +64,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startProxyVpn(Context context) { // 避免强制依赖 MainActivity
-        Intent intent = VpnService.prepare(context);
-        if (intent != null) {
-            vpnRequestLauncher.launch(intent);
-        } else {
-            startProxyVpnService();
-        }
-    }
-
-    private void startProxyVpnService() {
-        Intent serviceIntent = new Intent(this, ProxyVpnService.class);
-        startService(serviceIntent);
+    private void startProxyVpn(Context context) {
+        WeakReference<Context> contextRef = new WeakReference<>(context);
+        new Thread(() -> {
+            try {
+                SingBoxLauncher.getInstance().start(context, IpUtil.safeClientIp());
+            } catch (Exception e) {
+                Context ctx = contextRef.get();
+                if (ctx != null) {
+                    runOnUiThread(() ->
+                            Toast.makeText(ctx, "Failed to start VPN: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }
+        }).start();
     }
 
     @Override
@@ -98,8 +85,8 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_STORAGE_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                permissionHandler();
                 Toast.makeText(this, "Permissions granted", Toast.LENGTH_SHORT).show();
+                startProxyVpn(this);
             } else {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
                 // 可选择终止操作或退出程序
@@ -219,23 +206,4 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    private void grantPermission(String name)
-    {
-        ShellUtils.execRootCmd("pm grant " + this.getPackageName() + " " + name);
-    }
-    private void appopsAllow(String name)
-    {
-        ShellUtils.execRootCmd("appops set " + this.getPackageName() + " " + name + " allow");
-    }
-    private void permissionHandler() {
-        grantPermission("android.permission.SYSTEM_ALERT_WINDOW");
-        grantPermission("android.permission.FOREGROUND_SERVICE");
-        grantPermission("android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION");
-        grantPermission("android.permission.WRITE_SECURE_SETTINGS");
-        grantPermission("android.permission.READ_EXTERNAL_STORAGE");
-        grantPermission("android.permission.WRITE_EXTERNAL_STORAGE");
-        appopsAllow("MANAGE_EXTERNAL_STORAGE");
-    }
-
 }

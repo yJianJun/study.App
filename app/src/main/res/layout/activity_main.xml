@@ -16,5 +16,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="点击开始运行"
+        android:contentDescription="运行脚本按钮"
         android:layout_centerInParent="true"/>
 </LinearLayout>

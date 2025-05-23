@@ -54,10 +54,10 @@ public class ShellUtils {
         return false;
     }
 
-    public static String execRootCmdAndGetResult(String cmd) {
+    public static String execRootCmdAndGetResult(String cmd){
         if (cmd == null || cmd.trim().isEmpty() || !isCommandSafe(cmd)) {
             Log.e("ShellUtils", "Unsafe or empty command. Aborting execution.");
-            return null;
+            throw new IllegalArgumentException("Unsafe or empty command.");
         }
 
         Process process = null;
