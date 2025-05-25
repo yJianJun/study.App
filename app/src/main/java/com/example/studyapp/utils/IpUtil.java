@@ -9,16 +9,16 @@ import java.util.regex.Pattern;
 
 public class IpUtil {
     public static boolean isValidIPAddress(String ipAddress) {
-        if ((ipAddress != null) && (!ipAddress.isEmpty()))
-        {
-            return Pattern.matches("^([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}$", ipAddress);
-        }
-        return false;
+        if (ipAddress == null || ipAddress.isEmpty()) return false;
+        ipAddress = ipAddress.trim();  // 去除多余字符
+        return ipAddress.matches(
+                "^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})(\\.(25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})){3}$"
+        );
     }
     public static String getClientIp(String url) {
         try {
             String s = HttpUtil.requestGet(url);
-            if (!TextUtils.isEmpty(s) && isValidIPAddress(s))
+            if (!TextUtils.isEmpty(s))
             {
                 return s;
             }
@@ -32,12 +32,7 @@ public class IpUtil {
     }
 
     public static String safeClientIp() {
-        String result = getClientIp("http://47.236.153.142/");//SG
-        if (TextUtils.isEmpty(result))
-        {
-            result = getClientIp("http://8.211.204.20/");//UK
-        }
-        return result;
+        return getClientIp("https://get.geojs.io/v1/ip");//SG
     }
 
     public static String checkClientIp(String excludeCountry)
@@ -59,6 +54,7 @@ public class IpUtil {
         return "";
 
     }
+
 
     public static CompletableFuture<String> getClientIpFuture()
     {

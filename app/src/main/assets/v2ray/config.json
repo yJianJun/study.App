@@ -1,0 +1,123 @@
+{
+  "log": {
+    "loglevel": "trace"
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "cloudflare",
+        "address": "tls://1.1.1.1"
+      },
+      {
+        "tag": "local",
+        "address": "tls://1.1.1.1",
+        "detour": "direct"
+      },
+      {
+        "tag": "remote",
+        "address": "8.8.8.8"
+      }
+    ],
+    "rules": [
+      {
+        "server": "local",
+        "outbound": "any"
+      },
+      {
+        "server": "remote",
+        "query_type": ["A", "AAAA"]
+      }
+    ],
+    "fakeip": {
+      "enabled": true,
+      "inet4_range": "198.18.0.0/16",
+      "inet6_range": "fd00::/8"
+    }
+  },
+  "inbounds": [
+    {
+      "protocol": "tun",
+      "tag": "tun-in",
+      "settings": {
+        "autoRoute": true,
+        "domainStrategy": "ipv4_only",
+        "sniffingEnabled": true,
+        "strictRoute": false
+      },
+      "streamSettings": {
+        "network": "tcp"
+      },
+      "address": ["172.19.0.1/28"]
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "socks",
+      "tag": "socks-out",
+      "settings": {
+        "servers": [
+          {
+            "address": "105bd58a50330382.na.ipidea.online",
+            "port": 2333,
+            "users": [
+              {
+                "user": "cut_team_protoc_vast-zone-custom-region-us",
+                "pass": "Leoliu811001"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp"
+      },
+      "udpSettings": {
+        "enabled": true
+      }
+    },
+    {
+      "protocol": "dns",
+      "tag": "dns-out"
+    },
+    {
+      "protocol": "freedom",
+      "tag": "direct",
+      "settings": {}
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "block",
+      "settings": {}
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPOnDemand",
+    "rules": [
+      {
+        "type": "field",
+        "protocol": "dns",
+        "outboundTag": "dns-out"
+      },
+      {
+        "type": "field",
+        "protocol": ["stun", "quic"],
+        "outboundTag": "block"
+      },
+      {
+        "type": "field",
+        "ip": ["geoip:private"],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "ip": ["8.217.74.194/32"],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": ["cpm-api.resi-prod.resi-oversea.com", "resi-oversea.com"],
+        "outboundTag": "direct"
+      }
+    ]
+  }
+}

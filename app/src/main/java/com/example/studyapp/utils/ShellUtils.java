@@ -55,7 +55,7 @@ public class ShellUtils {
     }
 
     public static String execRootCmdAndGetResult(String cmd){
-        if (cmd == null || cmd.trim().isEmpty() || !isCommandSafe(cmd)) {
+        if (cmd == null || cmd.trim().isEmpty()) {
             Log.e("ShellUtils", "Unsafe or empty command. Aborting execution.");
             throw new IllegalArgumentException("Unsafe or empty command.");
         }
@@ -139,34 +139,36 @@ public class ShellUtils {
         return cmd.matches("^[a-zA-Z0-9._/:\\- ]+$");
     }
 
-    public static void execRootCmds(List<String> cmds) {
+    public static List<String> execRootCmds(List<String> cmds) {
+        List<String> results = new ArrayList<>();
         Process process = null;
         try {
-            if (hasBin("su")) {
-                process = Runtime.getRuntime().exec("su");
-            } else if (hasBin("xu")) {
-                process = Runtime.getRuntime().exec("xu");
-            } else if (hasBin("vu")) {
-                process = Runtime.getRuntime().exec("vu");
-            } else {
-                process = Runtime.getRuntime().exec("sh");
-            }
-
-            try (OutputStream os = process.getOutputStream()) {
+            // 初始化 Shell 环境
+            process = hasBin("su") ? Runtime.getRuntime().exec("su") : Runtime.getRuntime().exec("sh");
+            try (OutputStream os = process.getOutputStream();
+                 InputStream is = process.getInputStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
                 for (String cmd : cmds) {
-                    Log.e("ShellUtils", "Executing command");
+                    Log.d("ShellUtils", "Executing command: " + cmd);
                     os.write((cmd + "\n").getBytes());
                 }
                 os.write("exit\n".getBytes());
                 os.flush();
+                process.waitFor();
+                // 获取命令输出结果
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    results.add(line);
+                    Log.d("ShellUtils", "Command output: " + line);
+                }
             }
-            process.waitFor();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("ShellUtils", "Error executing commands: " + e.getMessage());
         } finally {
             if (process != null) {
                 process.destroy();
             }
         }
+        return results;
     }
 }

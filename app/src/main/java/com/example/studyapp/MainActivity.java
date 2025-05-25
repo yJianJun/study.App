@@ -1,12 +1,22 @@
 package com.example.studyapp;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.net.Uri;
+import android.net.VpnService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.VpnService;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
 import android.Manifest;
@@ -14,16 +24,14 @@ import android.content.pm.PackageManager;
 import android.os.Environment;
 
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.studyapp.proxy.CustomVpnService;
 import com.example.studyapp.request.ScriptResultRequest;
 import com.example.studyapp.service.CloudPhoneManageService;
-import com.example.studyapp.socks.SingBoxLauncher;
-import com.example.studyapp.utils.IpUtil;
-import com.example.studyapp.utils.ShellUtils;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -36,6 +44,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
+    private static final int VPN_REQUEST_CODE = 100; // Adding the missing constant
+    private static final int REQUEST_CODE_VPN = 2;
 
     private BroadcastReceiver scriptResultReceiver;
 
@@ -65,34 +75,100 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startProxyVpn(Context context) {
-        WeakReference<Context> contextRef = new WeakReference<>(context);
-        new Thread(() -> {
-            try {
-                SingBoxLauncher.getInstance().start(context, IpUtil.safeClientIp());
-            } catch (Exception e) {
-                Context ctx = contextRef.get();
-                if (ctx != null) {
-                    runOnUiThread(() ->
-                            Toast.makeText(ctx, "Failed to start VPN: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                    );
-                }
-            }
-        }).start();
+        if (!isNetworkAvailable(context)) {
+            Toast.makeText(context, "Network is not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!(context instanceof Activity)) {
+            Toast.makeText(context, "Context must be an Activity", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Activity activity = (Activity) context;
+
+        try {
+            startProxyServer(activity); // 在主线程中调用
+        } catch (IllegalStateException e) {
+            Toast.makeText(context, "Failed to start VPN: VPN Service illegal state", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(context, "Failed to start VPN: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void startProxyServer(Activity activity) {
+        // 请求 VPN 权限
+        Intent vpnPrepareIntent = VpnService.prepare(activity);
+        if (vpnPrepareIntent != null) {
+            // 如果尚未授予权限，请求权限，等待结果回调
+            startActivityForResult(vpnPrepareIntent, VPN_REQUEST_CODE);
+        } else {
+            // 如果已经授予权限，直接调用 onActivityResult 模拟结果处理
+            onActivityResult(VPN_REQUEST_CODE, RESULT_OK, null);
+        }
+    }
+
+    private void showToastOnUiThread(Context context, String message) {
+        new Handler(Looper.getMainLooper()).post(() ->
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
         if (requestCode == REQUEST_CODE_STORAGE_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permissions granted", Toast.LENGTH_SHORT).show();
+
+                if (!isNetworkAvailable(this)) {
+                    Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // 启动 VPN 服务
                 startProxyVpn(this);
             } else {
-                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
-                // 可选择终止操作或退出程序
-                finish(); // 假设应用需要此权限才能运行
+                showPermissionExplanationDialog();
             }
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == VPN_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Permission granted, now you can start your VpnService
+            Intent intent = new Intent(this, CustomVpnService.class);
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    this.startForegroundService(intent);
+                } else {
+                    this.startService(intent);
+                }
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+                showToastOnUiThread(this, "Failed to start VPN service");
+            }
+        } else {
+            // Permission denied or an error occurred
+            Log.e("VPNSetup", "VPN permission denied or cancelled by user.");
+            // Handle denial: show a message to the user, disable VPN functionality, etc.
+        }
+    }
+
+    private void showPermissionExplanationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Permission Required")
+                .setMessage("Storage Permission is required for the app to function. Please enable it in Settings.")
+                .setPositiveButton("Go to Settings", (dialog, which) -> {
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    Uri uri = Uri.fromParts("package", getPackageName(), null);
+                    intent.setData(uri);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> finish())
+                .show();
     }
 
     @Override
@@ -102,6 +178,17 @@ public class MainActivity extends AppCompatActivity {
             unregisterReceiver(scriptResultReceiver);
         }
     }
+
+    private boolean isNetworkAvailable(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null) {
+            Network network = connectivityManager.getActiveNetwork();
+            NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+            return capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        }
+        return false;
+    }
+
 
     private void runAutojsScript() {
         // 定义脚本文件路径
