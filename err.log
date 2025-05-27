@@ -1,0 +1,45 @@
+2025-05-27 19:04:08.548   301-8923  Vpn                     system_server                        I  Established by com.example.studyapp on tun0
+2025-05-27 19:04:08.551 41957-42156 CustomVpnService        com.example.studyapp                 D  Packet Info: TCP=false, DNS=false, Length=76
+2025-05-27 19:04:08.553   933-933   GoogleInpu...hodService com...gle.android.inputmethod.latin  I  GoogleInputMethodService.onStartInput():1247 onStartInput(EditorInfo{EditorInfo{packageName=com.example.studyapp, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=-1, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+2025-05-27 19:04:08.557 41957-42156 CustomVpnService        com.example.studyapp                 E  Error reading packet. Retry attempt 1 (Ask Gemini)
+                                                                                                    java.io.IOException: Stream Closed
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:316)
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:292)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.handleVpnTraffic(CustomVpnService.java:192)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.lambda$startVpn$0$com-example-studyapp-proxy-CustomVpnService(CustomVpnService.java:113)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1012)
+2025-05-27 19:04:08.557 41957-42156 CustomVpnService        com.example.studyapp                 E  Error reading packet. Retry attempt 2 (Ask Gemini)
+                                                                                                    java.io.IOException: Stream Closed
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:316)
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:292)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.handleVpnTraffic(CustomVpnService.java:192)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.lambda$startVpn$0$com-example-studyapp-proxy-CustomVpnService(CustomVpnService.java:113)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1012)
+2025-05-27 19:04:08.557 41957-42156 CustomVpnService        com.example.studyapp                 E  Error reading packet. Retry attempt 3 (Ask Gemini)
+                                                                                                    java.io.IOException: Stream Closed
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:316)
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:292)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.handleVpnTraffic(CustomVpnService.java:192)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.lambda$startVpn$0$com-example-studyapp-proxy-CustomVpnService(CustomVpnService.java:113)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1012)
+2025-05-27 19:04:08.558 41957-42156 CustomVpnService        com.example.studyapp                 E  Error reading packet. Retry attempt 4 (Ask Gemini)
+                                                                                                    java.io.IOException: Stream Closed
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:316)
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:292)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.handleVpnTraffic(CustomVpnService.java:192)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.lambda$startVpn$0$com-example-studyapp-proxy-CustomVpnService(CustomVpnService.java:113)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1012)
+2025-05-27 19:04:08.558 41957-42156 CustomVpnService        com.example.studyapp                 E  Error reading packet. Retry attempt 5 (Ask Gemini)
+                                                                                                    java.io.IOException: Stream Closed
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:316)
+                                                                                                    	at java.io.FileInputStream.read(FileInputStream.java:292)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.handleVpnTraffic(CustomVpnService.java:192)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService.lambda$startVpn$0$com-example-studyapp-proxy-CustomVpnService(CustomVpnService.java:113)
+                                                                                                    	at com.example.studyapp.proxy.CustomVpnService$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1012)
+2025-05-27 19:04:08.558 41957-42156 CustomVpnService        com.example.studyapp                 E  Max retry reached. Exiting loop.
+2025-05-27 19:04:08.582   301-1568  WindowManager           system_server                        V  getPackagePerformanceMode -- ComponentInfo{com.example.studyapp/com.example.studyapp.MainActivity} -- com.example.studyapp -- mode=0

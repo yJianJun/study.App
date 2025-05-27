@@ -98,6 +98,7 @@ public class CustomVpnService extends VpnService {
                 }
             }
 
+            builder.setBlocking(true);
             // 直接建立 TUN 虚拟接口
             vpnInterface = builder.establish();
             if (vpnInterface == null) {
@@ -160,17 +161,21 @@ public class CustomVpnService extends VpnService {
         return dnsServers;
     }
 
+
     @Override
     public void onDestroy() {
         super.onDestroy();
-        try {
-            if (vpnInterface != null) {
+        if (vpnInterface != null) {
+            try {
                 vpnInterface.close();
+                vpnInterface = null;
+                Log.d("CustomVpnService", "VPN interface closed.");
+            } catch (IOException e) {
+                Log.e("CustomVpnService", "Error closing VPN interface", e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
+
 
     private void handleVpnTraffic(ParcelFileDescriptor vpnInterface) {
         if (vpnInterface == null || !vpnInterface.getFileDescriptor().valid()) {
@@ -178,44 +183,54 @@ public class CustomVpnService extends VpnService {
         }
 
         byte[] packetData = new byte[32767];
+        final int maxRetry = 5; // 定义最大重试次数
         int retryCount = 0;
-        try (FileInputStream inStream = new FileInputStream(vpnInterface.getFileDescriptor());
-             FileOutputStream outStream = new FileOutputStream(vpnInterface.getFileDescriptor())) {
 
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    int length = inStream.read(packetData);
-                    if (length == -1) {
-                        // EOF
-                        break;
-                    }
+        FileInputStream inStream = new FileInputStream(vpnInterface.getFileDescriptor());
+        FileOutputStream outStream = new FileOutputStream(vpnInterface.getFileDescriptor());
+        // 将流放在 try-with-resources 之外，避免循环中被关闭
 
-                    if (length > 0) {
-                        boolean handled = processPacket(packetData, length);
-                        if (!handled) {
-                            outStream.write(packetData, 0, length);
-                        }
-                    }
-                    retryCount = 0; // Reset retry count after successful read
-                } catch (IOException e) {
-                    retryCount++;
-                    Log.e("CustomVpnService", "Error reading packet. Retry attempt " + retryCount, e);
-                    if (retryCount >= MAX_RETRY) { // Add constant definition
-                        Log.e("CustomVpnService", "Max retry reached. Exiting loop.");
-                        break;
+        // 循环处理 VPN 数据包
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                int length = inStream.read(packetData);
+                if (length == -1) {
+                    // 读取结束
+                    break;
+                }
+
+                if (length > 0) {
+                    boolean handled = processPacket(packetData, length);
+                    if (!handled) {
+                        outStream.write(packetData, 0, length);
                     }
                 }
-            }
-        } catch (IOException e) {
-            Log.e("CustomVpnService", "IO error in handleVpnTraffic", e);
-        } finally {
-            try {
-                vpnInterface.close();
+                retryCount = 0; // 成功一次后重置重试次数
             } catch (IOException e) {
-                Log.e("CustomVpnService", "Failed to close vpnInterface", e);
+                retryCount++;
+                Log.e("CustomVpnService", "Error reading packet. Retry attempt " + retryCount, e);
+                if (retryCount >= maxRetry) {
+                    Log.e("CustomVpnService", "Max retry reached. Exiting loop.");
+                    break;
+                }
+                // 可添加短暂延迟来避免频繁重试
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    Log.e("CustomVpnService", "Thread interrupted during sleep", ie);
+                }
             }
         }
+
+        // 最终关闭 ParcelFileDescriptor
+        try {
+            vpnInterface.close();
+        } catch (IOException e) {
+            Log.e("CustomVpnService", "Failed to close vpnInterface", e);
+        }
     }
+
     private boolean processPacket(byte[] packetData, int length) {
         if (packetData == null || length <= 0 || length > packetData.length) {
             Log.w("CustomVpnService", "Invalid packetData or length");
@@ -268,6 +283,4 @@ public class CustomVpnService extends VpnService {
 
         // 检查是否是 UDP 的 DNS 端口 (53)
         return sourcePort == 53 || destPort == 53;
-    }
-
-}
+    }}

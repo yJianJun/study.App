@@ -45,6 +45,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
     private static final int VPN_REQUEST_CODE = 100; // Adding the missing constant
+
+    private static final int ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE = 1001;
+
     private static final int REQUEST_CODE_VPN = 2;
 
     private BroadcastReceiver scriptResultReceiver;
@@ -52,23 +55,35 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> vpnRequestLauncher;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 检查存储权限
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                    REQUEST_CODE_STORAGE_PERMISSION);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            // 针对 Android 10 或更低版本检查普通存储权限
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        REQUEST_CODE_STORAGE_PERMISSION
+                );
+            }
+        } else {
+            // 针对 Android 11 及更高版本检查全文件管理权限
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+                // 请求权限
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE);
+            }
         }
 
-
-        // 查找按钮对象
+        // 初始化按钮
         Button runScriptButton = findViewById(R.id.run_script_button);
         if (runScriptButton != null) {
-            runScriptButton.setOnClickListener(view -> runAutojsScript()); // 设置点击事件
+            runScriptButton.setOnClickListener(v -> runAutojsScript());
         } else {
             Toast.makeText(this, "Button not found", Toast.LENGTH_SHORT).show();
         }
@@ -137,6 +152,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        if (requestCode == ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
+                if (!isNetworkAvailable(this)) {
+                    Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                // 启动 VPN 服务
+                startProxyVpn(this);
+            } else {
+                // 权限未授予，可提示用户
+                Toast.makeText(this, "请授予所有文件管理权限", Toast.LENGTH_SHORT).show();
+            }
+        }
+
         if (requestCode == VPN_REQUEST_CODE && resultCode == RESULT_OK) {
             // Permission granted, now you can start your VpnService
             Intent intent = new Intent(this, CustomVpnService.class);
@@ -150,10 +179,6 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
                 showToastOnUiThread(this, "Failed to start VPN service");
             }
-        } else {
-            // Permission denied or an error occurred
-            Log.e("VPNSetup", "VPN permission denied or cancelled by user.");
-            // Handle denial: show a message to the user, disable VPN functionality, etc.
         }
     }
 

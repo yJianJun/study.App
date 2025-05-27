@@ -1,105 +1,114 @@
 package com.example.studyapp.utils;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
 
-import com.example.studyapp.MainActivity;
-
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Arrays;
-import java.io.InputStreamReader;
-import java.util.List;
 
 public class V2rayUtil {
 
     public static void startV2Ray(Context context) {
-        // 确保文件存在
-        ensureV2RayFilesExist(context);
-
         try {
-            // 获取文件路径
-            File fileDir = context.getFilesDir();
-            File v2rayBinary = new File(fileDir, "v2ray/v2ray");
-            File v2rayConfig = new File(fileDir, "v2ray/config.json");
-
-            // 检查文件存在性（再次验证）
-            if (!v2rayBinary.exists() || !v2rayConfig.exists()) {
-                Log.e("V2Ray", "V2Ray binary or config file not found");
+            // 确保文件存在并准备就绪
+            if (!ensureV2RayFilesExist(context)) {
+                Log.e("V2Ray", "V2Ray files are missing, cannot start.");
                 return;
             }
 
-            // 检查权限
-            if (!v2rayBinary.setExecutable(true)) {
-                throw new IllegalStateException("Failed to make V2Ray binary executable");
-            }
+            // 获取文件路径
+            File v2rayBinary = new File(context.getCodeCacheDir(), "v2ray");
+            File v2rayConfig = new File(context.getCodeCacheDir(), "config.json");
+
 
             // 构建命令
-            ProcessBuilder builder = new ProcessBuilder()
-                    .command(v2rayBinary.getAbsolutePath(),
-                            "-config",
-                            v2rayConfig.getAbsolutePath())
-                    .directory(fileDir);
+            ProcessBuilder builder = new ProcessBuilder(v2rayBinary.getAbsolutePath(), "-config", v2rayConfig.getAbsolutePath()).redirectErrorStream(true);
 
-            // 其余逻辑不变...
-            Process process = builder.start();
+            // 启动进程
+            try {
+                Process process = builder.start();
+            } catch (IOException e) {
+                Log.e("V2Ray", "Failed to start the process", e);
+                return;
+            }
 
-            // 捕获输出逻辑略...
+            // 日志输出
             Log.i("V2Ray", "V2Ray service started");
-
         } catch (Exception e) {
             Log.e("V2Ray", "Failed to start V2Ray core", e);
         }
     }
 
-    private static void ensureV2RayFilesExist(Context context) {
-        File filesDir = context.getFilesDir();
-        File v2rayDir = new File(filesDir, "v2ray");
-        File v2rayBinary = new File(v2rayDir, "v2ray");
-        File v2rayConfig = new File(v2rayDir, "config.json");
+    public static boolean ensureV2RayFilesExist(Context context) {
 
-        try {
-            // 创建 v2ray 目录
-            if (!v2rayDir.exists() && v2rayDir.mkdirs()) {
-                Log.i("V2Ray", "Created directory: " + v2rayDir.getAbsolutePath());
-            }
+        synchronized (V2rayUtil.class) {
+            try {
+                // 检查并复制 v2ray 可执行文件
+                String abi = Build.SUPPORTED_ABIS[0]; // 获取当前设备支持的 ABI 架构
+                File binaryOutputFile = new File(context.getCodeCacheDir(), "v2ray");
 
-            // 检查并复制 v2ray 可执行文件
-            if (!v2rayBinary.exists()) {
-                try (InputStream input = context.getAssets().open("v2ray/v2ray");
-                     FileOutputStream output = new FileOutputStream(v2rayBinary)) {
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = input.read(buffer)) > 0) {
-                        output.write(buffer, 0, length);
+                if (!binaryOutputFile.exists()) {
+                    InputStream binaryInputStream = context.getAssets().open("v2ray/" + abi + "/v2ray");
+                    FileOutputStream binaryOutputStream = new FileOutputStream(binaryOutputFile);
+                    try {
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = binaryInputStream.read(buffer)) > 0) {
+                            binaryOutputStream.write(buffer, 0, length);
+                        }
+                        Log.i("V2Ray", "Copied v2ray binary to: " + binaryOutputFile.getAbsolutePath());
+                    } catch (Exception e) {
+                        Log.e("V2rayUtil", "Failed to copy v2ray binary", e);
+                        return false;
+                    } finally {
+                        binaryInputStream.close();
+                        binaryOutputStream.close();
                     }
-                    Log.i("V2Ray", "Copied v2ray binary to: " + v2rayBinary.getAbsolutePath());
                 }
-            }
+                binaryOutputFile.setExecutable(true, false);
+                binaryOutputFile.setReadable(true, false);
+                binaryOutputFile.setWritable(true, false);
 
-            // 确保可执行权限
-            if (!v2rayBinary.setExecutable(true)) {
-                throw new IllegalStateException("Failed to make v2ray binary executable");
-            }
+                // 检查文件是否已经具有可执行权限
+                if (!binaryOutputFile.canExecute()) {
+                    Log.e("V2rayUtil", "Binary file does not have execute permission. Aborting start.");
+                    return false;
+                }
 
-            // 检查并复制 config.json 配置文件
-            if (!v2rayConfig.exists()) {
-                try (InputStream input = context.getAssets().open("v2ray/config.json");
-                     FileOutputStream output = new FileOutputStream(v2rayConfig)) {
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = input.read(buffer)) > 0) {
-                        output.write(buffer, 0, length);
+                // 检查并复制 config.json 文件
+
+
+                File configFile = new File(context.getCodeCacheDir(), "config.json");
+
+                if (!configFile.exists()) {
+                    InputStream configInputStream = context.getAssets().open("v2ray/" + abi + "/config.json");
+                    FileOutputStream configOutputStream = new FileOutputStream(configFile);
+                    try {
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = configInputStream.read(buffer)) > 0) {
+                            configOutputStream.write(buffer, 0, length);
+                        }
+                        Log.i("V2Ray", "Copied v2ray config.json to: " + configFile.getAbsolutePath());
+                    } catch (Exception e) {
+                        Log.e("V2rayUtil", "Failed to copy config.json", e);
+                        return false;
+                    } finally {
+                        configInputStream.close();
+                        configOutputStream.close();
                     }
-                    Log.i("V2Ray", "Copied v2ray config to: " + v2rayConfig.getAbsolutePath());
                 }
+                configFile.setReadable(true, false);
+                configFile.setWritable(true, false);
+
+                return true;
+            } catch (IOException e) {
+                Log.e("V2Ray", "Failed to prepare V2Ray files", e);
+                return false;
             }
-        } catch (IOException e) {
-            Log.e("V2Ray", "Failed to prepare V2Ray files", e);
         }
     }
 }
