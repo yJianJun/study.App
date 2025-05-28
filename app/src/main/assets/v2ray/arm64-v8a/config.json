@@ -119,5 +119,6 @@
         "outboundTag": "direct"
       }
     ]
-  }
+  },
+  "tun_address": "172.19.0.1"
 }

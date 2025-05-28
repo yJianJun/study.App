@@ -5,6 +5,7 @@ import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import com.example.studyapp.config.ConfigLoader;
 import com.example.studyapp.utils.V2rayUtil;
 
 import java.io.BufferedReader;
@@ -22,9 +23,8 @@ import java.util.List;
 public class CustomVpnService extends VpnService {
 
 
-    private static final String TUN_ADDRESS = "172.19.0.1"; // TUN 的 IP 地址
+    private static final String TUN_ADDRESS = ConfigLoader.getTunnelAddress(); // TUN 的 IP 地址
     private static final int PREFIX_LENGTH = 28;           // 子网掩码
-    private static final int MAX_RETRY = 5;
 
     private ParcelFileDescriptor vpnInterface;            // TUN 接口描述符
 
