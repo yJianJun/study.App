@@ -3,19 +3,46 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:layout_gravity="center"
-    tools:context=".MainActivity"
+    android:gravity="center"
     android:padding="16dp"
-    android:background="@drawable/background">
+    android:background="@drawable/background"
+    tools:context=".MainActivity">
 
     <Button
         android:id="@+id/run_script_button"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="点击开始运行"
-        android:contentDescription="运行脚本按钮"
-        android:layout_centerInParent="true"/>
+        android:text="开始运行脚本"
+        android:contentDescription="运行脚本按钮" />
+
+    <Button
+        android:id="@+id/connectVpnButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="开启vpn"
+        android:contentDescription="开启 VPN 按钮" />
+
+    <Button
+        android:id="@+id/disconnectVpnButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="断开vpn"
+        android:contentDescription="断开 VPN 按钮" />
+
+    <Button
+        android:id="@+id/modifyDeviceInfoButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="修改设备信息"
+        android:contentDescription="修改设备信息按钮" />
+
+    <Button
+        android:id="@+id/resetDeviceInfoButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="重置设备信息"
+        android:contentDescription="重置设备信息按钮" />
 </LinearLayout>

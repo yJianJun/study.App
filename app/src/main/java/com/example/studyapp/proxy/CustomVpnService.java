@@ -1,7 +1,10 @@
 package com.example.studyapp.proxy;
 
+import static com.example.studyapp.utils.V2rayUtil.isV2rayRunning;
+
 import android.content.Intent;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
@@ -26,10 +29,12 @@ public class CustomVpnService extends VpnService {
     private static final String TUN_ADDRESS = ConfigLoader.getTunnelAddress(); // TUN 的 IP 地址
     private static final int PREFIX_LENGTH = 28;           // 子网掩码
 
+    private Thread vpnTrafficThread; // 保存线程引用
     private ParcelFileDescriptor vpnInterface;            // TUN 接口描述符
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        isVpnActive = true; // 服务启动时激活
         try {
             // 检查 V2ray 是否已启动，避免重复进程
             if (!isV2rayRunning()) {
@@ -44,34 +49,6 @@ public class CustomVpnService extends VpnService {
             stopSelf(); // 发生异常时停止服务
         }
         return START_STICKY;
-    }
-
-    private boolean isV2rayRunning() {
-        try {
-            // 执行系统命令，获取当前所有正在运行的进程
-            Process process = Runtime.getRuntime().exec("ps");
-
-            // 读取进程的输出
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // 检查是否有包含 "v2ray" 的进程
-                    if (line.contains("v2ray")) {
-                        Log.i("CustomVpnService", "V2Ray process found: " + line);
-                        return true;
-                    }
-                }
-            }
-
-            // 检查完成，没有找到 "v2ray" 相关的进程
-            Log.i("CustomVpnService", "No V2Ray process is running.");
-            return false;
-
-        } catch (IOException e) {
-            // 捕获异常并记录日志
-            Log.e("CustomVpnService", "Error checking V2Ray process: " + e.getMessage(), e);
-            return false;
-        }
     }
 
     private void startVpn() {
@@ -161,77 +138,102 @@ public class CustomVpnService extends VpnService {
         return dnsServers;
     }
 
+    private static CustomVpnService instance;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        instance = this; // 在创建时将实例存储到静态字段
+    }
+
+    public static CustomVpnService getInstance() {
+        return instance;
+    }
+
 
     @Override
     public void onDestroy() {
+        isVpnActive = false; // 服务销毁时停用
         super.onDestroy();
+
+        // 停止处理数据包的线程
+        if (vpnTrafficThread != null && vpnTrafficThread.isAlive()) {
+            vpnTrafficThread.interrupt(); // 中断线程
+            try {
+                vpnTrafficThread.join(); // 等待线程停止
+            } catch (InterruptedException e) {
+                Log.e("CustomVpnService", "Error while stopping vpnTrafficThread", e);
+                Thread.currentThread().interrupt(); // 重新设置当前线程的中断状态
+            }
+            vpnTrafficThread = null; // 清空线程引用
+        }
+
+        // 关闭 VPN 接口
         if (vpnInterface != null) {
             try {
                 vpnInterface.close();
-                vpnInterface = null;
-                Log.d("CustomVpnService", "VPN interface closed.");
             } catch (IOException e) {
-                Log.e("CustomVpnService", "Error closing VPN interface", e);
+                Log.e("CustomVpnService", "Error closing VPN interface: " + e.getMessage(), e);
             }
+            vpnInterface = null; // 避免资源泄露
         }
+
+        // 停止 V2Ray 服务
+        V2rayUtil.stopV2Ray();
+        Log.i("CustomVpnService", "VPN 服务已销毁");
     }
+
+    private volatile boolean isVpnActive = false; // 标志位控制数据包处理逻辑
 
 
     private void handleVpnTraffic(ParcelFileDescriptor vpnInterface) {
-        if (vpnInterface == null || !vpnInterface.getFileDescriptor().valid()) {
-            throw new IllegalArgumentException("ParcelFileDescriptor is invalid!");
-        }
+        // 启动处理流量的线程
+        vpnTrafficThread = new Thread(() -> {
+            if (vpnInterface == null || !vpnInterface.getFileDescriptor().valid()) {
+                Log.e("CustomVpnService", "ParcelFileDescriptor is invalid!");
+                return;
+            }
 
-        byte[] packetData = new byte[32767];
-        final int maxRetry = 5; // 定义最大重试次数
-        int retryCount = 0;
+            byte[] packetData = new byte[32767]; // 数据包缓冲区
 
-        FileInputStream inStream = new FileInputStream(vpnInterface.getFileDescriptor());
-        FileOutputStream outStream = new FileOutputStream(vpnInterface.getFileDescriptor());
-        // 将流放在 try-with-resources 之外，避免循环中被关闭
+            try (FileInputStream inStream = new FileInputStream(vpnInterface.getFileDescriptor());
+                 FileOutputStream outStream = new FileOutputStream(vpnInterface.getFileDescriptor())) {
 
-        // 循环处理 VPN 数据包
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                int length = inStream.read(packetData);
-                if (length == -1) {
-                    // 读取结束
-                    break;
-                }
+                while (!Thread.currentThread().isInterrupted()&&isVpnActive) { // 检查线程是否已中断
+                    int length;
+                    try {
+                        length = inStream.read(packetData);
+                        if (length == -1) break; // 读取完成退出
+                    } catch (IOException e) {
+                        Log.e("CustomVpnService", "Error reading packet", e);
+                        break; // 读取出错退出循环
+                    }
 
-                if (length > 0) {
-                    boolean handled = processPacket(packetData, length);
-                    if (!handled) {
-                        outStream.write(packetData, 0, length);
+                    if (length > 0) {
+                        boolean handled = processPacket(packetData, length);
+                        if (!handled) {
+                            outStream.write(packetData, 0, length); // 未处理的包写回
+                        }
                     }
                 }
-                retryCount = 0; // 成功一次后重置重试次数
             } catch (IOException e) {
-                retryCount++;
-                Log.e("CustomVpnService", "Error reading packet. Retry attempt " + retryCount, e);
-                if (retryCount >= maxRetry) {
-                    Log.e("CustomVpnService", "Max retry reached. Exiting loop.");
-                    break;
-                }
-                // 可添加短暂延迟来避免频繁重试
+                Log.e("CustomVpnService", "Error handling VPN traffic", e);
+            } finally {
                 try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    Log.e("CustomVpnService", "Thread interrupted during sleep", ie);
+                    vpnInterface.close();
+                } catch (IOException e) {
+                    Log.e("CustomVpnService", "Failed to close vpnInterface", e);
                 }
             }
-        }
-
-        // 最终关闭 ParcelFileDescriptor
-        try {
-            vpnInterface.close();
-        } catch (IOException e) {
-            Log.e("CustomVpnService", "Failed to close vpnInterface", e);
-        }
+        });
+        vpnTrafficThread.start();
     }
 
     private boolean processPacket(byte[] packetData, int length) {
+        if (!isVpnActive) {
+            Log.w("CustomVpnService", "VPN is not active. Skipping packet processing.");
+            return false;
+        }
         if (packetData == null || length <= 0 || length > packetData.length) {
             Log.w("CustomVpnService", "Invalid packetData or length");
             return false;
@@ -283,4 +285,5 @@ public class CustomVpnService extends VpnService {
 
         // 检查是否是 UDP 的 DNS 端口 (53)
         return sourcePort == 53 || destPort == 53;
-    }}
+    }
+}

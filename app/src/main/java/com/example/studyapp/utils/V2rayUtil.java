@@ -4,10 +4,12 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class V2rayUtil {
     private  static File v2rayConfig,v2rayBinary;
@@ -107,5 +109,68 @@ public class V2rayUtil {
                 return false;
             }
         }
+    }
+
+    public static void stopV2Ray() {
+        // 如果二进制文件不存在或不可执行，直接返回
+        if (v2rayBinary == null || !v2rayBinary.exists() || !v2rayBinary.canExecute()) {
+            Log.e("V2Ray", "v2rayBinary is either null, does not exist, or is not executable: " +
+                    (v2rayBinary != null ? v2rayBinary.getAbsolutePath() : "null"));
+            return;
+        }
+
+        // 创建新线程来处理停止任务
+        new Thread(() -> {
+            try {
+                // 判断是否有运行中的 v2ray 进程
+                if (isV2rayRunning()) {
+                    String command = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? "ps -A" : "ps";
+                    Process psProcess = Runtime.getRuntime().exec(command); // 列出所有进程
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(psProcess.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            // 检查是否是 v2ray 进程
+                            if (line.contains("v2ray")) {
+                                String[] parts = line.trim().split("\\s+");
+                                if (parts.length > 1) {
+                                    String pid = parts[1]; // 获取 PID
+                                    Log.i("V2Ray", "Found V2Ray process, PID: " + pid);
+
+                                    // 发出 kill 指令以终止进程
+                                    Process killProcess = new ProcessBuilder("kill", "-9", pid).start();
+                                    killProcess.waitFor(); // 等待命令完成
+                                    Log.i("V2Ray", "V2Ray stopped successfully.");
+                                    return; // 停止任务完成后退出
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Log.i("V2Ray", "No V2Ray process is currently running.");
+            } catch (IOException | InterruptedException e) {
+                Log.e("V2Ray", "Error while stopping V2Ray: " + e.getMessage(), e);
+            }
+        }).start();
+    }
+
+    public static boolean isV2rayRunning() {
+        try {
+            String command = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? "ps -A" : "ps";
+            Process process = Runtime.getRuntime().exec(command);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("v2ray")) { // 更精确匹配进程描述
+                        Log.i("CustomVpnService", "V2Ray process found: " + line);
+                        return true;
+                    }
+                }
+            }
+            Log.i("CustomVpnService", "No V2Ray process is running.");
+        } catch (IOException e) {
+            Log.e("CustomVpnService", "Error checking V2Ray process: " + e.getMessage(), e);
+        }
+        return false;
     }
 }
