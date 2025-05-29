@@ -30,6 +30,7 @@ import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.studyapp.autoJS.AutoJsUtil;
+import com.example.studyapp.device.ChangeDeviceInfo;
 import com.example.studyapp.proxy.CustomVpnService;
 import com.example.studyapp.utils.ReflectionHelper;
 
@@ -92,6 +93,20 @@ public class MainActivity extends AppCompatActivity {
             disconnectButton.setOnClickListener(v -> stopProxy(this));
         } else {
             Toast.makeText(this, "Disconnect button not found", Toast.LENGTH_SHORT).show();
+        }
+
+        Button modifyDeviceInfoButton = findViewById(R.id.modifyDeviceInfoButton);
+        if (modifyDeviceInfoButton != null) {
+            modifyDeviceInfoButton.setOnClickListener(v -> ChangeDeviceInfo.changeDeviceInfo(getPackageName(),this));
+        } else {
+            Toast.makeText(this, "modifyDeviceInfo button not found", Toast.LENGTH_SHORT).show();
+        }
+
+        Button resetDeviceInfoButton = findViewById(R.id.resetDeviceInfoButton);
+        if (resetDeviceInfoButton != null) {
+            resetDeviceInfoButton.setOnClickListener(v -> ChangeDeviceInfo.resetChangedDeviceInfo(getPackageName(),this));
+        } else {
+            Toast.makeText(this, "resetDeviceInfo button not found", Toast.LENGTH_SHORT).show();
         }
 
     }

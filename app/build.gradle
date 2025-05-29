@@ -14,6 +14,13 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // 指定支持的 ABI 类型（如果需要限制支持的 ABI）
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_ABI=arm64-v8a"
+            }
+        }
     }
 
     buildTypes {
@@ -21,15 +28,28 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug {
+            // 禁用符号剥离
+            ndk {
+                debugSymbolLevel 'none'
+            }
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
+    // 添加 CMake 支持
+    externalNativeBuild {
+        cmake {
+            // 指定 CMakeLists.txt 的路径
+            path file("src/main/cpp/CMakeLists.txt")
+        }
+    }
 }
 
 dependencies {
-
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
@@ -37,6 +57,7 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+
     // Retrofit 核心库
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
 
@@ -45,5 +66,4 @@ dependencies {
 
     // 如果需要 RxJava 支持（可选）
     implementation 'com.squareup.retrofit2:adapter-rxjava3:2.9.0'
-
 }

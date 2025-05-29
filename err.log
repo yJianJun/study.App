@@ -1,14 +1,72 @@
-2025-05-29 15:19:05.558 65246-65246 AndroidRuntime          com.example.studyapp                 D  Shutting down VM
-2025-05-29 15:19:05.559 65246-65246 AndroidRuntime          com.example.studyapp                 E  FATAL EXCEPTION: main (Ask Gemini)
-                                                                                                    Process: com.example.studyapp, PID: 65246
-                                                                                                    java.lang.IllegalArgumentException: Service not registered: com.example.studyapp.MainActivity$1@992d8bc
-                                                                                                    	at android.app.LoadedApk.forgetServiceDispatcher(LoadedApk.java:2015)
-                                                                                                    	at android.app.ContextImpl.unbindService(ContextImpl.java:2076)
-                                                                                                    	at android.content.ContextWrapper.unbindService(ContextWrapper.java:889)
-                                                                                                    	at android.content.ContextWrapper.unbindService(ContextWrapper.java:889)
-                                                                                                    	at com.example.studyapp.MainActivity.stopProxy(MainActivity.java:186)
-                                                                                                    	at com.example.studyapp.MainActivity.lambda$onCreate$2$com-example-studyapp-MainActivity(MainActivity.java:94)
-                                                                                                    	at com.example.studyapp.MainActivity$$ExternalSyntheticLambda5.onClick(D8$$SyntheticClass:0)
+2025-05-29 18:31:01.362 12214-12253 OpenGLRenderer          com.example.studyapp                 I  Davey! duration=9184238016ms; Flags=0, FrameTimelineVsyncId=72708, IntendedVsync=4113925334671, Vsync=4113925334671, InputEventId=-1041137076, HandleInputStart=4113926523074, AnimationStart=4113931604430, PerformTraversalsStart=4113931816166, DrawStart=4113932196473, FrameDeadline=9188320516271553, FrameInterval=4113926504409, FrameStartTime=16666667, SyncQueued=4113937541186, SyncStart=4113937854706, IssueDrawCommandsStart=4113937950366, SwapBuffers=4113939236526, FrameCompleted=9188351942323312, DequeueBufferDuration=23040, QueueBufferDuration=465177, GpuCompleted=9188351942323312, SwapBuffersCompleted=4113940226083, DisplayPresentTime=0, CommandSubmissionCompleted=4113939236526,
+2025-05-29 18:31:02.682 12214-12233 OpenGLRenderer          com.example.studyapp                 I  Davey! duration=9184238019ms; Flags=0, FrameTimelineVsyncId=72966, IntendedVsync=4115242001364, Vsync=4115242001364, InputEventId=-866436489, HandleInputStart=4115243018485, AnimationStart=4115247485342, PerformTraversalsStart=4115247717785, DrawStart=4115248097217, FrameDeadline=9188352142352764, FrameInterval=4115243003028, FrameStartTime=16666667, SyncQueued=4115258519494, SyncStart=4115258606988, IssueDrawCommandsStart=4115258749020, SwapBuffers=4115260557520, FrameCompleted=9188353261370630, DequeueBufferDuration=18082, QueueBufferDuration=241775, GpuCompleted=9188353261370630, SwapBuffersCompleted=4115261043694, DisplayPresentTime=0, CommandSubmissionCompleted=4115260557520,
+2025-05-29 18:31:02.750 12214-12228 xample.studyapp         com.example.studyapp                 I  Compiler allocated 4413KB to compile void android.view.ViewRootImpl.performTraversals()
+2025-05-29 18:31:02.831 12214-12233 OpenGLRenderer          com.example.studyapp                 I  Davey! duration=9184238017ms; Flags=0, FrameTimelineVsyncId=73029, IntendedVsync=4115392001367, Vsync=4115392001367, InputEventId=-471849332, HandleInputStart=4115392772438, AnimationStart=4115398737358, PerformTraversalsStart=4115398960759, DrawStart=4115399244823, FrameDeadline=9188353392352789, FrameInterval=4115392759023, FrameStartTime=16666667, SyncQueued=4115407484419, SyncStart=4115407640741, IssueDrawCommandsStart=4115407725318, SwapBuffers=4115409246546, FrameCompleted=9188353409823715, DequeueBufferDuration=18082, QueueBufferDuration=240608, GpuCompleted=9188353409823715, SwapBuffersCompleted=4115409741762, DisplayPresentTime=0, CommandSubmissionCompleted=4115409246546,
+2025-05-29 18:31:03.812  1922-2017  MemInfoService          com.android.expansiontools           D  memScan: [MemEntity(id=null, pid=12214, user=u0_a103, name=Script helper, pkg=com.example.studyapp, res=187, time=0, total=5083, ts=1748514663424, pr=10, ni=-10, virt=14336, shr=102, s=S, cpu=0.0, mem=5.6, args=com.example.studyapp)]
+2025-05-29 18:31:04.312 12214-12253 OpenGLRenderer          com.example.studyapp                 I  Davey! duration=9184238014ms; Flags=0, FrameTimelineVsyncId=73190, IntendedVsync=4116892001397, Vsync=4116892001397, InputEventId=-382612953, HandleInputStart=4116893008865, AnimationStart=4116893016156, PerformTraversalsStart=4116893021114, DrawStart=4116893357966, FrameDeadline=9188353542352792, FrameInterval=4116892979992, FrameStartTime=16666667, SyncQueued=4116903203825, SyncStart=4116903234739, IssueDrawCommandsStart=4116903293069, SwapBuffers=4116906054086, FrameCompleted=9188354906737413, DequeueBufferDuration=12832, QueueBufferDuration=189279, GpuCompleted=9188354906737413, SwapBuffersCompleted=4116906448392, DisplayPresentTime=0, CommandSubmissionCompleted=4116906054086,
+2025-05-29 18:31:04.352 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.353 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.354 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.354 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.355 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.356 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.356 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.357 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.358 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.358 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.359 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.360 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.360 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.361 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.361 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.362 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.363 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.363 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.364 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.365 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.366 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.366 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.367 12214-12214 Debug                   com.example.studyapp                 D  putString executed successfully.
+2025-05-29 18:31:04.377 12214-12214 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.brand google
+2025-05-29 18:31:04.394 12214-12214 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.model raven
+2025-05-29 18:31:04.406 12214-12214 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.manufacturer google
+2025-05-29 18:31:04.425 12214-12214 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.device raven
+2025-05-29 18:31:04.455 12214-12214 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.name raven
+2025-05-29 18:31:04.468 12214-12214 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.build.version.incremental 9325679
+2025-05-29 18:31:04.477 12214-12214 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
+2025-05-29 18:31:04.478 12214-12214 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.board.platform acr980m
+2025-05-29 18:31:04.488 12214-12214 System.err              com.example.studyapp                 W  java.lang.UnsatisfiedLinkError: dlopen failed: library "libnative.so" not found
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at java.lang.Runtime.loadLibrary0(Runtime.java:1077)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at java.lang.Runtime.loadLibrary0(Runtime.java:998)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at java.lang.System.loadLibrary(System.java:1670)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.example.studyapp.device.Native.<clinit>(Native.java:6)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.example.studyapp.device.Native.setBootId(Native Method)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.example.studyapp.device.ChangeDeviceInfo.changeDeviceInfo(ChangeDeviceInfo.java:103)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.example.studyapp.MainActivity.lambda$onCreate$3$com-example-studyapp-MainActivity(MainActivity.java:100)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.example.studyapp.MainActivity$$ExternalSyntheticLambda7.onClick(D8$$SyntheticClass:0)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.view.View.performClick(View.java:7542)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.google.android.material.button.MaterialButton.performClick(MaterialButton.java:1218)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.view.View.performClickInternal(View.java:7519)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.view.View.-$$Nest$mperformClickInternal(Unknown Source:0)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.view.View$PerformClick.run(View.java:29476)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.os.Handler.handleCallback(Handler.java:942)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.os.Handler.dispatchMessage(Handler.java:99)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.os.Looper.loopOnce(Looper.java:201)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.os.Looper.loop(Looper.java:288)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at android.app.ActivityThread.main(ActivityThread.java:7930)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at java.lang.reflect.Method.invoke(Native Method)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+2025-05-29 18:31:04.489 12214-12214 System.err              com.example.studyapp                 W  	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
+2025-05-29 18:31:04.489 12214-12214 xample.studyapp         com.example.studyapp                 E  No implementation found for void com.example.studyapp.device.Native.setBootId(java.lang.String) (tried Java_com_example_studyapp_device_Native_setBootId and Java_com_example_studyapp_device_Native_setBootId__Ljava_lang_String_2)
+--------- beginning of crash
+2025-05-29 18:31:04.489 12214-12214 AndroidRuntime          com.example.studyapp                 D  Shutting down VM
+2025-05-29 18:31:04.489 12214-12214 AndroidRuntime          com.example.studyapp                 E  FATAL EXCEPTION: main (Ask Gemini)
+                                                                                                    Process: com.example.studyapp, PID: 12214
+                                                                                                    java.lang.UnsatisfiedLinkError: No implementation found for void com.example.studyapp.device.Native.setBootId(java.lang.String) (tried Java_com_example_studyapp_device_Native_setBootId and Java_com_example_studyapp_device_Native_setBootId__Ljava_lang_String_2)
+                                                                                                    	at com.example.studyapp.device.Native.setBootId(Native Method)
+                                                                                                    	at com.example.studyapp.device.ChangeDeviceInfo.changeDeviceInfo(ChangeDeviceInfo.java:103)
+                                                                                                    	at com.example.studyapp.MainActivity.lambda$onCreate$3$com-example-studyapp-MainActivity(MainActivity.java:100)
+                                                                                                    	at com.example.studyapp.MainActivity$$ExternalSyntheticLambda7.onClick(D8$$SyntheticClass:0)
                                                                                                     	at android.view.View.performClick(View.java:7542)
                                                                                                     	at com.google.android.material.button.MaterialButton.performClick(MaterialButton.java:1218)
                                                                                                     	at android.view.View.performClickInternal(View.java:7519)
@@ -22,85 +80,17 @@
                                                                                                     	at java.lang.reflect.Method.invoke(Native Method)
                                                                                                     	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
                                                                                                     	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
-2025-05-29 15:19:05.560   301-56098 ActivityTaskManager     system_server                        W    Force finishing activity com.example.studyapp/.MainActivity
-2025-05-29 15:19:05.566 65246-65246 Process                 com.example.studyapp                 I  Sending signal. PID: 65246 SIG: 9
----------------------------- PROCESS ENDED (65246) for package com.example.studyapp ----------------------------
-2025-05-29 15:19:05.600   301-317   ActivityManager         system_server                        W  Exception when unbinding service com.example.studyapp/.proxy.CustomVpnService (Ask Gemini)
-                                                                                                    android.os.DeadObjectException
-                                                                                                    	at android.os.BinderProxy.transactNative(Native Method)
-                                                                                                    	at android.os.BinderProxy.transact(BinderProxy.java:584)
-                                                                                                    	at android.app.IApplicationThread$Stub$Proxy.scheduleUnbindService(IApplicationThread.java:1346)
-                                                                                                    	at com.android.server.am.ActiveServices.removeConnectionLocked(ActiveServices.java:4923)
-                                                                                                    	at com.android.server.am.ActiveServices.unbindServiceLocked(ActiveServices.java:3173)
-                                                                                                    	at com.android.server.am.ActivityManagerService.unbindService(ActivityManagerService.java:12798)
-                                                                                                    	at android.app.ContextImpl.unbindService(ContextImpl.java:2079)
-                                                                                                    	at com.android.server.connectivity.Vpn$1.interfaceRemoved(Vpn.java:2076)
-                                                                                                    	at com.android.server.NetworkManagementService.lambda$notifyInterfaceRemoved$3(NetworkManagementService.java:353)
-                                                                                                    	at com.android.server.NetworkManagementService$$ExternalSyntheticLambda6.sendCallback(Unknown Source:2)
-                                                                                                    	at com.android.server.NetworkManagementService.invokeForAllObservers(NetworkManagementService.java:314)
-                                                                                                    	at com.android.server.NetworkManagementService.notifyInterfaceRemoved(NetworkManagementService.java:353)
-                                                                                                    	at com.android.server.NetworkManagementService.-$$Nest$mnotifyInterfaceRemoved(Unknown Source:0)
-                                                                                                    	at com.android.server.NetworkManagementService$NetdUnsolicitedEventListener.lambda$onInterfaceRemoved$6$com-android-server-NetworkManagementService$NetdUnsolicitedEventListener(NetworkManagementService.java:620)
-                                                                                                    	at com.android.server.NetworkManagementService$NetdUnsolicitedEventListener$$ExternalSyntheticLambda0.run(Unknown Source:4)
-                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
-                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
-                                                                                                    	at android.os.Looper.loopOnce(Looper.java:201)
-                                                                                                    	at android.os.Looper.loop(Looper.java:288)
-                                                                                                    	at android.os.HandlerThread.run(HandlerThread.java:67)
-                                                                                                    	at com.android.server.ServiceThread.run(ServiceThread.java:44)
-2025-05-29 15:19:05.600   301-317   ActivityManager         system_server                        W  Bringing down service while still waiting for start foreground: ServiceRecord{7871f79 u0 com.example.studyapp/.proxy.CustomVpnService}
-2025-05-29 15:19:05.623   301-326   ActivityManager         system_server                        W  Failed to update http proxy for: com.example.studyapp
-2025-05-29 15:19:05.637   301-1242  ActivityManager         system_server                        I  app.info.packageName:com.example.studyapp app.setKilled(true)
-2025-05-29 15:19:05.637   301-1242  ActivityManager         system_server                        I  Process com.example.studyapp (pid 65246) has died: fg +50 TOP
-2025-05-29 15:19:05.637   301-986   WindowManager           system_server                        I  WIN DEATH: Window{d550fa0 u0 com.example.studyapp/com.example.studyapp.MainActivity}
-2025-05-29 15:19:05.637   301-986   InputManager-JNI        system_server                        W  Input channel object 'd550fa0 com.example.studyapp/com.example.studyapp.MainActivity (client)' was disposed without first being removed with the input manager!
-2025-05-29 15:19:05.660   301-321   WindowManager           system_server                        W  Failed to deliver inset state change to w=Window{d550fa0 u0 com.example.studyapp/com.example.studyapp.MainActivity EXITING} (Ask Gemini)
-                                                                                                    android.os.DeadObjectException
-                                                                                                    	at android.os.BinderProxy.transactNative(Native Method)
-                                                                                                    	at android.os.BinderProxy.transact(BinderProxy.java:584)
-                                                                                                    	at android.view.IWindow$Stub$Proxy.insetsControlChanged(IWindow.java:473)
-                                                                                                    	at com.android.server.wm.WindowState.notifyInsetsControlChanged(WindowState.java:4015)
-                                                                                                    	at com.android.server.wm.InsetsStateController.lambda$notifyPendingInsetsControlChanged$4$com-android-server-wm-InsetsStateController(InsetsStateController.java:351)
-                                                                                                    	at com.android.server.wm.InsetsStateController$$ExternalSyntheticLambda2.run(Unknown Source:2)
-                                                                                                    	at com.android.server.wm.WindowAnimator.executeAfterPrepareSurfacesRunnables(WindowAnimator.java:345)
-                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacementNoTrace(RootWindowContainer.java:832)
-                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacement(RootWindowContainer.java:777)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacementLoop(WindowSurfacePlacer.java:177)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:126)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:115)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer$Traverser.run(WindowSurfacePlacer.java:57)
-                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
-                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
-                                                                                                    	at android.os.Looper.loopOnce(Looper.java:201)
-                                                                                                    	at android.os.Looper.loop(Looper.java:288)
-                                                                                                    	at android.os.HandlerThread.run(HandlerThread.java:67)
-                                                                                                    	at com.android.server.ServiceThread.run(ServiceThread.java:44)
-2025-05-29 15:19:05.661   301-321   WindowManager           system_server                        W  Exception thrown during dispatchAppVisibility Window{d550fa0 u0 com.example.studyapp/com.example.studyapp.MainActivity EXITING} (Ask Gemini)
-                                                                                                    android.os.DeadObjectException
-                                                                                                    	at android.os.BinderProxy.transactNative(Native Method)
-                                                                                                    	at android.os.BinderProxy.transact(BinderProxy.java:584)
-                                                                                                    	at android.view.IWindow$Stub$Proxy.dispatchAppVisibility(IWindow.java:536)
-                                                                                                    	at com.android.server.wm.WindowState.sendAppVisibilityToClients(WindowState.java:3478)
-                                                                                                    	at com.android.server.wm.WindowContainer.sendAppVisibilityToClients(WindowContainer.java:1234)
-                                                                                                    	at com.android.server.wm.WindowToken.setClientVisible(WindowToken.java:392)
-                                                                                                    	at com.android.server.wm.ActivityRecord.setClientVisible(ActivityRecord.java:6865)
-                                                                                                    	at com.android.server.wm.ActivityRecord.onAnimationFinished(ActivityRecord.java:7687)
-                                                                                                    	at com.android.server.wm.ActivityRecord.postApplyAnimation(ActivityRecord.java:5512)
-                                                                                                    	at com.android.server.wm.ActivityRecord.commitVisibility(ActivityRecord.java:5472)
-                                                                                                    	at com.android.server.wm.ActivityRecord.commitVisibility(ActivityRecord.java:5476)
-                                                                                                    	at com.android.server.wm.AppTransitionController.handleClosingApps(AppTransitionController.java:1194)
-                                                                                                    	at com.android.server.wm.AppTransitionController.handleAppTransitionReady(AppTransitionController.java:304)
-                                                                                                    	at com.android.server.wm.RootWindowContainer.checkAppTransitionReady(RootWindowContainer.java:970)
-                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacementNoTrace(RootWindowContainer.java:834)
-                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacement(RootWindowContainer.java:777)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacementLoop(WindowSurfacePlacer.java:177)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:126)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:115)
-                                                                                                    	at com.android.server.wm.WindowSurfacePlacer$Traverser.run(WindowSurfacePlacer.java:57)
-                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
-                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
-                                                                                                    	at android.os.Looper.loopOnce(Looper.java:201)
-                                                                                                    	at android.os.Looper.loop(Looper.java:288)
-                                                                                                    	at android.os.HandlerThread.run(HandlerThread.java:67)
-                                                                                                    	at com.android.server.ServiceThread.run(ServiceThread.java:44)
-2025-05-29 15:19:06.061   301-320   ActivityTaskManager     system_server                        W  Activity top resumed state loss timeout for ActivityRecord{e2942a u0 com.example.studyapp/.MainActivity} t-1 f}}
+2025-05-29 18:31:04.491   300-11157 ActivityTaskManager     system_server                        W    Force finishing activity com.example.studyapp/.MainActivity
+2025-05-29 18:31:04.498   300-316   ActivityManager         system_server                        I  Showing crash dialog for package com.example.studyapp u0
+2025-05-29 18:31:04.514   300-316   CoreBackPreview         system_server                        D  Window{a2bd234 u0 Application Error: com.example.studyapp}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.WindowOnBackInvokedDispatcher$OnBackInvokedCallbackWrapper@77359ff, mPriority=0}
+2025-05-29 18:31:04.992   300-318   ActivityTaskManager     system_server                        W  Activity top resumed state loss timeout for ActivityRecord{ff3be4e u0 com.example.studyapp/.MainActivity} t118 f}}
+2025-05-29 18:31:04.996   300-318   ActivityTaskManager     system_server                        W  Activity pause timeout for ActivityRecord{ff3be4e u0 com.example.studyapp/.MainActivity} t118 f}}
+2025-05-29 18:31:09.354   300-384   InputDispatcher         system_server                        W  Window fd7dd4f com.example.studyapp/com.example.studyapp.MainActivity (server) is unresponsive: fd7dd4f com.example.studyapp/com.example.studyapp.MainActivity (server) is not responding. Waited 5002ms for MotionEvent
+2025-05-29 18:31:09.354   300-384   InputDispatcher         system_server                        W  Canceling events for fd7dd4f com.example.studyapp/com.example.studyapp.MainActivity (server) because it is unresponsive
+2025-05-29 18:31:09.354   300-384   WindowManager           system_server                        I  ANR in Window{fd7dd4f u0 com.example.studyapp/com.example.studyapp.MainActivity}. Reason:fd7dd4f com.example.studyapp/com.example.studyapp.MainActivity (server) is not responding. Waited 5002ms for MotionEvent
+2025-05-29 18:31:09.395   300-12566 ActivityManager         system_server                        I  Crashing app skipping ANR: com.android.server.am.ProcessErrorStateRecord@d90e124 Input dispatching timed out (fd7dd4f com.example.studyapp/com.example.studyapp.MainActivity (server) is not responding. Waited 5002ms for MotionEvent)
+2025-05-29 18:31:09.395   300-12566 ActivityManager         system_server                        D  Completed ANR of com.example.studyapp in 8ms, latency 0ms
+2025-05-29 18:31:14.378  1922-2017  MemInfoService          com.android.expansiontools           D  memScan: [MemEntity(id=null, pid=12214, user=u0_a103, name=Script helper, pkg=com.example.studyapp, res=183, time=3, total=5178, ts=1748514674151, pr=20, ni=0, virt=14336, shr=102, s=S, cpu=0.0, mem=5.5, args=com.example.studyapp)]
+2025-05-29 18:31:15.031   300-318   ActivityTaskManager     system_server                        W  Activity destroy timeout for ActivityRecord{ff3be4e u0 com.example.studyapp/.MainActivity} t118 f}}
+2025-05-29 18:31:15.031   300-318   InputManager-JNI        system_server                        W  Input channel object 'fd7dd4f com.example.studyapp/com.example.studyapp.MainActivity (client)' was disposed without first being removed with the input manager!
+2025-05-29 18:31:24.950  1922-2017  MemInfoService          com.android.expansiontools           D  memScan: [MemEntity(id=null, pid=12214, user=u0_a103, name=Script helper, pkg=com.example.studyapp, res=183, time=3, total=5119, ts=1748514684704, pr=20, ni=0, virt=14336, shr=102, s=S, cpu=0.0, mem=5.5, args=com.example.studyapp)]

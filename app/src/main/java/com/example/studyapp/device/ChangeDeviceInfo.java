@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 
 public class ChangeDeviceInfo {
 
-    public void changeDeviceInfo(String current_pkg_name,Context context) {
+    public static void changeDeviceInfo(String current_pkg_name,Context context) {
         // 指定包名优先级高于全局
         callVCloudSettings_put(current_pkg_name + "_android_id", "my123456",context);
         callVCloudSettings_put(current_pkg_name + "_screen_brightness", "100",context);
@@ -118,26 +118,36 @@ public class ChangeDeviceInfo {
 
     }
 
-    private void callVCloudSettings_put(String key, String value, Context context) {
+    private static void callVCloudSettings_put(String key, String value, Context context) {
         if (context == null) {
             throw new IllegalArgumentException("Context cannot be null");
         }
 
         try {
+            // 获取类对象
             Class<?> clazz = Class.forName("android.provider.VCloudSettings$Global");
             Method putStringMethod = clazz.getDeclaredMethod("putString", ContentResolver.class, String.class, String.class);
             putStringMethod.setAccessible(true);
+
+            // 调用方法
             putStringMethod.invoke(null, context.getContentResolver(), key, value);
+            Log.d("Debug", "putString executed successfully.");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Class VCloudSettings$Global not found", e);
+            Log.e("Reflection Error", "Class not found", e);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Method putString not found", e);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("Failed to invoke putString via reflection", e);
+            Log.e("Reflection Error", "Method not found", e);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getTargetException();  // 获取异常的根原因
+            if (cause instanceof SecurityException) {
+                Log.e("Reflection Error", "SecurityException: Permission denied. You need WRITE_SECURE_SETTINGS.", cause);
+            } else {
+                Log.e("Reflection Error", "InvocationTargetException during putString invocation", e);
+            }
+        } catch (Exception e) {
+            Log.e("Reflection Error", "Unexpected error during putString invocation", e);
         }
     }
-
-    private void resetChangedDeviceInfo(String current_pkg_name,Context context) {
+    public static void resetChangedDeviceInfo(String current_pkg_name,Context context) {
         try {
             Native.setBootId("00000000000000000000000000000000");
         } catch (Exception e) {
