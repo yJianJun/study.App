@@ -1,137 +1,102 @@
-2025-05-30 10:44:11.434 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: cmd settings2 delete global global_android_id
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr:
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: Exception occurred while executing 'delete':
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: java.lang.SecurityException: You either need MANAGE_USERS, CREATE_USERS, or QUERY_USERS permission to: query user
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.checkQueryOrCreateUsersPermission(UserManagerService.java:2854)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.getUserInfo(UserManagerService.java:1428)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getUserInfo(UserController.java:2599)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getCurrentUser(UserController.java:2539)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.ActivityManagerService.getCurrentUser(ActivityManagerService.java:16355)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService$MyShellCommand.onCommand(SettingsService.java:263)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.ShellCommand.exec(ShellCommand.java:38)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService.onShellCommand(SettingsService.java:55)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.shellCommand(Binder.java:1049)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.onTransact(Binder.java:877)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransactInternal(Binder.java:1285)
-2025-05-30 10:44:11.446 47349-48462 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransact(Binder.java:1244)
-2025-05-30 10:44:11.450 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: cmd settings2 delete global pm_list_features
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr:
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: Exception occurred while executing 'delete':
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: java.lang.SecurityException: You either need MANAGE_USERS, CREATE_USERS, or QUERY_USERS permission to: query user
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.checkQueryOrCreateUsersPermission(UserManagerService.java:2854)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.getUserInfo(UserManagerService.java:1428)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getUserInfo(UserController.java:2599)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getCurrentUser(UserController.java:2539)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.ActivityManagerService.getCurrentUser(ActivityManagerService.java:16355)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService$MyShellCommand.onCommand(SettingsService.java:263)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.ShellCommand.exec(ShellCommand.java:38)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService.onShellCommand(SettingsService.java:55)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.shellCommand(Binder.java:1049)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.onTransact(Binder.java:877)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransactInternal(Binder.java:1285)
-2025-05-30 10:44:11.461 47349-48468 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransact(Binder.java:1244)
-2025-05-30 10:44:11.464 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: cmd settings2 delete global pm_list_libraries
-2025-05-30 10:44:11.475 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr:
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: Exception occurred while executing 'delete':
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: java.lang.SecurityException: You either need MANAGE_USERS, CREATE_USERS, or QUERY_USERS permission to: query user
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.checkQueryOrCreateUsersPermission(UserManagerService.java:2854)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.getUserInfo(UserManagerService.java:1428)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getUserInfo(UserController.java:2599)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getCurrentUser(UserController.java:2539)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.ActivityManagerService.getCurrentUser(ActivityManagerService.java:16355)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService$MyShellCommand.onCommand(SettingsService.java:263)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.ShellCommand.exec(ShellCommand.java:38)
-2025-05-30 10:44:11.483 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService.onShellCommand(SettingsService.java:55)
-2025-05-30 10:44:11.484 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.shellCommand(Binder.java:1049)
-2025-05-30 10:44:11.484 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.onTransact(Binder.java:877)
-2025-05-30 10:44:11.484 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransactInternal(Binder.java:1285)
-2025-05-30 10:44:11.484 47349-48474 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransact(Binder.java:1244)
-2025-05-30 10:44:11.488 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: cmd settings2 delete global anticheck_pkgs
-2025-05-30 10:44:11.505 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr:
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: Exception occurred while executing 'delete':
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: java.lang.SecurityException: You either need MANAGE_USERS, CREATE_USERS, or QUERY_USERS permission to: query user
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.checkQueryOrCreateUsersPermission(UserManagerService.java:2854)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.getUserInfo(UserManagerService.java:1428)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getUserInfo(UserController.java:2599)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getCurrentUser(UserController.java:2539)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.ActivityManagerService.getCurrentUser(ActivityManagerService.java:16355)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService$MyShellCommand.onCommand(SettingsService.java:263)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.ShellCommand.exec(ShellCommand.java:38)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService.onShellCommand(SettingsService.java:55)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.shellCommand(Binder.java:1049)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.onTransact(Binder.java:877)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransactInternal(Binder.java:1285)
-2025-05-30 10:44:11.506 47349-48480 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransact(Binder.java:1244)
-2025-05-30 10:44:11.509 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: cmd settings2 delete global com.example.studyapp_android_id
-2025-05-30 10:44:11.520 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr:
-2025-05-30 10:44:11.520 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: Exception occurred while executing 'delete':
-2025-05-30 10:44:11.520 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: java.lang.SecurityException: You either need MANAGE_USERS, CREATE_USERS, or QUERY_USERS permission to: query user
-2025-05-30 10:44:11.520 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.checkQueryOrCreateUsersPermission(UserManagerService.java:2854)
-2025-05-30 10:44:11.520 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.getUserInfo(UserManagerService.java:1428)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getUserInfo(UserController.java:2599)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getCurrentUser(UserController.java:2539)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.ActivityManagerService.getCurrentUser(ActivityManagerService.java:16355)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService$MyShellCommand.onCommand(SettingsService.java:263)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.ShellCommand.exec(ShellCommand.java:38)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService.onShellCommand(SettingsService.java:55)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.shellCommand(Binder.java:1049)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.onTransact(Binder.java:877)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransactInternal(Binder.java:1285)
-2025-05-30 10:44:11.521 47349-48486 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransact(Binder.java:1244)
-2025-05-30 10:44:11.527 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: cmd settings2 delete global com.example.studyapp_adb_enabled
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr:
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: Exception occurred while executing 'delete':
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: java.lang.SecurityException: You either need MANAGE_USERS, CREATE_USERS, or QUERY_USERS permission to: query user
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.checkQueryOrCreateUsersPermission(UserManagerService.java:2854)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.getUserInfo(UserManagerService.java:1428)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getUserInfo(UserController.java:2599)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getCurrentUser(UserController.java:2539)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.ActivityManagerService.getCurrentUser(ActivityManagerService.java:16355)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService$MyShellCommand.onCommand(SettingsService.java:263)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.ShellCommand.exec(ShellCommand.java:38)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService.onShellCommand(SettingsService.java:55)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.shellCommand(Binder.java:1049)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.onTransact(Binder.java:877)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransactInternal(Binder.java:1285)
-2025-05-30 10:44:11.538 47349-48492 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransact(Binder.java:1244)
-2025-05-30 10:44:11.542 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: cmd settings2 delete global com.example.studyapp_development_settings_enabled
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr:
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: Exception occurred while executing 'delete':
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: java.lang.SecurityException: You either need MANAGE_USERS, CREATE_USERS, or QUERY_USERS permission to: query user
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.checkQueryOrCreateUsersPermission(UserManagerService.java:2854)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.pm.UserManagerService.getUserInfo(UserManagerService.java:1428)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getUserInfo(UserController.java:2599)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.UserController.getCurrentUser(UserController.java:2539)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.server.am.ActivityManagerService.getCurrentUser(ActivityManagerService.java:16355)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService$MyShellCommand.onCommand(SettingsService.java:263)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.modules.utils.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:97)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.ShellCommand.exec(ShellCommand.java:38)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at com.android.providers.settings2.SettingsService.onShellCommand(SettingsService.java:55)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.shellCommand(Binder.java:1049)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.onTransact(Binder.java:877)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransactInternal(Binder.java:1285)
-2025-05-30 10:44:11.552 47349-48498 ShellUtils              com.example.studyapp                 E  Stderr: 	at android.os.Binder.execTransact(Binder.java:1244)
-2025-05-30 10:44:11.559 47349-47349 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
-2025-05-30 10:44:11.559 47349-47349 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
-2025-05-30 10:44:11.559 47349-47349 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
-2025-05-30 10:44:11.559 47349-47349 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
-2025-05-30 10:44:11.559 47349-47349 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
-2025-05-30 10:44:11.559 47349-47349 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
-2025-05-30 10:44:11.561 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.brand Vortex
-2025-05-30 10:44:11.577 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.model HD65_Select
-2025-05-30 10:44:11.596 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.manufacturer Vortex
-2025-05-30 10:44:11.607 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.device HD65_Select
-2025-05-30 10:44:11.618 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.product.name HD65_Select
-2025-05-30 10:44:11.629 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.build.version.incremental 20240306
-2025-05-30 10:44:11.639 47349-47349 ShellUtils              com.example.studyapp                 E  Unsafe command, aborting.
-2025-05-30 10:44:11.641 47349-47349 ShellUtils              com.example.studyapp                 D  Executing command: setprop ro.board.platform sm8150p
-2025-05-30 10:44:18.021  1922-2017  MemInfoService          com.android.expansiontools           D  memScan: [MemEntity(id=null, pid=47349, user=u0_a108, name=Script helper, pkg=com.example.studyapp, res=213, time=2, total=5555, ts=1748573057819, pr=10, ni=-10, virt=14336, shr=122, s=S, cpu=0.0, mem=6.4, args=com.example.studyapp), MemEntity(id=null, pid=44048, user=u0_a100, name=AutoJs6, pkg=org.autojs.autojs6, res=134, time=1, total=5555, ts=1748573057819, pr=20, ni=0, virt=15360, shr=84, s=S, cpu=4.0, mem=4.0, args=org.autojs.autojs6)]
-2025-05-30 10:44:19.046 47349-48504 OpenGLRenderer          com.example.studyapp                 I  Davey! duration=9184238016ms; Flags=0, FrameTimelineVsyncId=170027, IntendedVsync=62511622785102, Vsync=62511622785102, InputEventId=-800809781, HandleInputStart=62511623260371, AnimationStart=62511627975819, PerformTraversalsStart=62511628155764, DrawStart=62511628386455, FrameDeadline=9246742866199745, FrameInterval=62511623238789, FrameStartTime=16666666, SyncQueued=62511634800612, SyncStart=62511634851650, IssueDrawCommandsStart=62511634937977, SwapBuffers=62511636183011, FrameCompleted=9246749639371862, DequeueBufferDuration=19541, QueueBufferDuration=437760, GpuCompleted=9246749639371862, SwapBuffersCompleted=62511637142525, DisplayPresentTime=-1, CommandSubmissionCompleted=62511636183011,
-2025-05-30 10:44:19.286 47349-47377 OpenGLRenderer          com.example.studyapp                 I  Davey! duration=9184238008ms; Flags=0, FrameTimelineVsyncId=170126, IntendedVsync=62511865084340, Vsync=62511865084340, InputEventId=-1040841467, HandleInputStart=62511865544853, AnimationStart=62511867959969, PerformTraversalsStart=62511868050379, DrawStart=62511868182202, FrameDeadline=9246749788748896, FrameInterval=62511865534937, FrameStartTime=16666667, SyncQueued=62511871580746, SyncStart=62511871616910, IssueDrawCommandsStart=62511871679030, SwapBuffers=62511872675583, FrameCompleted=9246749873903701, DequeueBufferDuration=14874, QueueBufferDuration=205902, GpuCompleted=9246749873903701, SwapBuffersCompleted=62511873285705, DisplayPresentTime=-1, CommandSubmissionCompleted=62511872675583,
-2025-05-30 10:44:28.771  1922-2017  MemInfoService          com.android.expansiontools           D  memScan: [MemEntity(id=null, pid=47349, user=u0_a108, name=Script helper, pkg=com.example.studyapp, res=213, time=3, total=5559, ts=1748573068370, pr=10, ni=-10, virt=14336, shr=122, s=S, cpu=0.0, mem=6.4, args=com.example.studyapp), MemEntity(id=null, pid=44048, user=u0_a100, name=AutoJs6, pkg=org.autojs.autojs6, res=134, time=1, total=5559, ts=1748573068370, pr=20, ni=0, virt=15360, shr=84, s=S, cpu=0.0, mem=4.0, args=org.autojs.autojs6)]
+2025-05-30 11:18:50.925 54389-54744 CustomVpnService        com.example.studyapp                 W  VPN is not active. Skipping packet processing.
+2025-05-30 11:18:50.929   300-315   ActivityManager         system_server                        W  Bringing down service while still waiting for start foreground: ServiceRecord{710855b u0 com.example.studyapp/.proxy.CustomVpnService}
+---------------------------- PROCESS ENDED (54389) for package com.example.studyapp ----------------------------
+2025-05-30 11:18:50.965 54389-54389 CustomVpnService        com.example.studyapp                 I  VPN 服务已停止
+2025-05-30 11:18:50.965 54389-54389 stopProxy               com.example.studyapp                 D  服务已成功停止
+2025-05-30 11:18:50.966 54389-54389 Choreographer           com.example.studyapp                 I  Skipped 53 frames!  The application may be doing too much work on its main thread.
+2025-05-30 11:18:50.970 54389-54389 CustomVpnService        com.example.studyapp                 I  VPN 服务已销毁
+2025-05-30 11:18:50.970 54389-54389 AndroidRuntime          com.example.studyapp                 D  Shutting down VM
+2025-05-30 11:18:50.971 54389-54389 AndroidRuntime          com.example.studyapp                 E  FATAL EXCEPTION: main (Ask Gemini)
+                                                                                                    Process: com.example.studyapp, PID: 54389
+                                                                                                    android.app.RemoteServiceException$ForegroundServiceDidNotStartInTimeException: Context.startForegroundService() did not then call Service.startForeground(): ServiceRecord{710855b u0 com.example.studyapp/.proxy.CustomVpnService}
+                                                                                                    	at android.app.ActivityThread.generateForegroundServiceDidNotStartInTimeException(ActivityThread.java:2005)
+                                                                                                    	at android.app.ActivityThread.throwRemoteServiceException(ActivityThread.java:1979)
+                                                                                                    	at android.app.ActivityThread.-$$Nest$mthrowRemoteServiceException(Unknown Source:0)
+                                                                                                    	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2241)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:106)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:201)
+                                                                                                    	at android.os.Looper.loop(Looper.java:288)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:7930)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
+                                                                                                    Caused by: android.app.StackTrace: Last startServiceCommon() call for this service was made here
+                                                                                                    	at android.app.ContextImpl.startServiceCommon(ContextImpl.java:1915)
+                                                                                                    	at android.app.ContextImpl.startForegroundService(ContextImpl.java:1870)
+                                                                                                    	at android.content.ContextWrapper.startForegroundService(ContextWrapper.java:822)
+                                                                                                    	at android.content.ContextWrapper.startForegroundService(ContextWrapper.java:822)
+                                                                                                    	at com.example.studyapp.MainActivity.handleVpnPermissionResult(MainActivity.java:241)
+                                                                                                    	at com.example.studyapp.MainActivity.onActivityResult(MainActivity.java:175)
+                                                                                                    	at com.example.studyapp.MainActivity.startProxyServer(MainActivity.java:143)
+                                                                                                    	at com.example.studyapp.MainActivity.startProxyVpn(MainActivity.java:127)
+                                                                                                    	at com.example.studyapp.MainActivity.lambda$onCreate$1$com-example-studyapp-MainActivity(MainActivity.java:86)
+                                                                                                    	at com.example.studyapp.MainActivity$$ExternalSyntheticLambda5.onClick(D8$$SyntheticClass:0)
+                                                                                                    	at android.view.View.performClick(View.java:7542)
+                                                                                                    	at com.google.android.material.button.MaterialButton.performClick(MaterialButton.java:1218)
+                                                                                                    	at android.view.View.performClickInternal(View.java:7519)
+                                                                                                    	at android.view.View.-$$Nest$mperformClickInternal(Unknown Source:0)
+                                                                                                    	at android.view.View$PerformClick.run(View.java:29476)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:201) 
+                                                                                                    	at android.os.Looper.loop(Looper.java:288) 
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:7930) 
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method) 
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548) 
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936) 
+2025-05-30 11:18:50.973   300-4987  ActivityTaskManager     system_server                        W    Force finishing activity com.example.studyapp/.MainActivity
+2025-05-30 11:18:50.986 54389-54389 Process                 com.example.studyapp                 I  Sending signal. PID: 54389 SIG: 9
+2025-05-30 11:18:51.022   300-10818 ActivityManager         system_server                        I  app.info.packageName:com.example.studyapp app.setKilled(true)
+2025-05-30 11:18:51.022   300-10818 ActivityManager         system_server                        I  Process com.example.studyapp (pid 54389) has died: fg  TOP
+2025-05-30 11:18:51.022   300-986   WindowManager           system_server                        I  WIN DEATH: Window{ce188c0 u0 com.example.studyapp/com.example.studyapp.MainActivity}
+2025-05-30 11:18:51.022   300-986   InputManager-JNI        system_server                        W  Input channel object 'ce188c0 com.example.studyapp/com.example.studyapp.MainActivity (client)' was disposed without first being removed with the input manager!
+2025-05-30 11:18:51.054   300-319   WindowManager           system_server                        W  Failed to deliver inset state change to w=Window{ce188c0 u0 com.example.studyapp/com.example.studyapp.MainActivity EXITING} (Ask Gemini)
+                                                                                                    android.os.DeadObjectException
+                                                                                                    	at android.os.BinderProxy.transactNative(Native Method)
+                                                                                                    	at android.os.BinderProxy.transact(BinderProxy.java:584)
+                                                                                                    	at android.view.IWindow$Stub$Proxy.insetsControlChanged(IWindow.java:473)
+                                                                                                    	at com.android.server.wm.WindowState.notifyInsetsControlChanged(WindowState.java:4015)
+                                                                                                    	at com.android.server.wm.InsetsStateController.lambda$notifyPendingInsetsControlChanged$4$com-android-server-wm-InsetsStateController(InsetsStateController.java:351)
+                                                                                                    	at com.android.server.wm.InsetsStateController$$ExternalSyntheticLambda2.run(Unknown Source:2)
+                                                                                                    	at com.android.server.wm.WindowAnimator.executeAfterPrepareSurfacesRunnables(WindowAnimator.java:345)
+                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacementNoTrace(RootWindowContainer.java:832)
+                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacement(RootWindowContainer.java:777)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacementLoop(WindowSurfacePlacer.java:177)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:126)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:115)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer$Traverser.run(WindowSurfacePlacer.java:57)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:201)
+                                                                                                    	at android.os.Looper.loop(Looper.java:288)
+                                                                                                    	at android.os.HandlerThread.run(HandlerThread.java:67)
+                                                                                                    	at com.android.server.ServiceThread.run(ServiceThread.java:44)
+2025-05-30 11:18:51.054   300-319   WindowManager           system_server                        W  Exception thrown during dispatchAppVisibility Window{ce188c0 u0 com.example.studyapp/com.example.studyapp.MainActivity EXITING} (Ask Gemini)
+                                                                                                    android.os.DeadObjectException
+                                                                                                    	at android.os.BinderProxy.transactNative(Native Method)
+                                                                                                    	at android.os.BinderProxy.transact(BinderProxy.java:584)
+                                                                                                    	at android.view.IWindow$Stub$Proxy.dispatchAppVisibility(IWindow.java:536)
+                                                                                                    	at com.android.server.wm.WindowState.sendAppVisibilityToClients(WindowState.java:3478)
+                                                                                                    	at com.android.server.wm.WindowContainer.sendAppVisibilityToClients(WindowContainer.java:1234)
+                                                                                                    	at com.android.server.wm.WindowToken.setClientVisible(WindowToken.java:392)
+                                                                                                    	at com.android.server.wm.ActivityRecord.setClientVisible(ActivityRecord.java:6865)
+                                                                                                    	at com.android.server.wm.ActivityRecord.onAnimationFinished(ActivityRecord.java:7687)
+                                                                                                    	at com.android.server.wm.ActivityRecord.postApplyAnimation(ActivityRecord.java:5512)
+                                                                                                    	at com.android.server.wm.ActivityRecord.commitVisibility(ActivityRecord.java:5472)
+                                                                                                    	at com.android.server.wm.ActivityRecord.commitVisibility(ActivityRecord.java:5476)
+                                                                                                    	at com.android.server.wm.AppTransitionController.handleClosingApps(AppTransitionController.java:1194)
+                                                                                                    	at com.android.server.wm.AppTransitionController.handleAppTransitionReady(AppTransitionController.java:304)
+                                                                                                    	at com.android.server.wm.RootWindowContainer.checkAppTransitionReady(RootWindowContainer.java:970)
+                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacementNoTrace(RootWindowContainer.java:834)
+                                                                                                    	at com.android.server.wm.RootWindowContainer.performSurfacePlacement(RootWindowContainer.java:777)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacementLoop(WindowSurfacePlacer.java:177)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:126)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:115)
+                                                                                                    	at com.android.server.wm.WindowSurfacePlacer$Traverser.run(WindowSurfacePlacer.java:57)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:201)
+                                                                                                    	at android.os.Looper.loop(Looper.java:288)
+                                                                                                    	at android.os.HandlerThread.run(HandlerThread.java:67)
+                                                                                                    	at com.android.server.ServiceThread.run(ServiceThread.java:44)
+2025-05-30 11:18:51.473   300-318   ActivityTaskManager     system_server                        W  Activity top resumed state loss timeout for ActivityRecord{86432f9 u0 com.example.studyapp/.MainActivity} t-1 f}}

@@ -1,6 +1,7 @@
 package com.example.studyapp;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.ServiceConnection;
@@ -188,45 +189,63 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isServiceRunning(Context context, Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        if (manager != null) {
+            for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+                if (serviceClass.getName().equals(service.service.getClassName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void stopProxy(Context context) {
         if (context == null) {
             Log.e("stopProxy", "上下文为空，无法停止服务");
             return;
         }
 
-        boolean isServiceStopped = true;
-        try {
-            Object instance = ReflectionHelper.getInstance("com.example.studyapp.proxy.CustomVpnService", "instance");
-            if (instance != null) {
-                // 尝试获取 onDestroy 方法并调用
-                Method onDestroyMethod = instance.getClass().getMethod("onDestroy");
-                onDestroyMethod.invoke(instance);
-                Log.d("stopProxy", "服务已成功停止");
-            } else {
-                isServiceStopped = false;
-                Log.w("stopProxy", "实例为空，服务可能未启动");
-            }
-        } catch (NoSuchMethodException e) {
-            isServiceStopped = false;
-            Log.e("stopProxy", "服务未提供 onDestroy 方法: " + e.getMessage(), e);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            isServiceStopped = false;
-            Log.e("stopProxy", "无法调用 onDestroy 方法: " + e.getMessage(), e);
-        } catch (Exception e) {
-            isServiceStopped = false;
-            Log.e("stopProxy", "停止服务时发生未知错误: " + e.getMessage(), e);
+        if (!isServiceRunning(context, CustomVpnService.class)) {
+            Log.w("stopProxy", "服务未运行，无法停止");
+            return;
         }
 
-        // 显示用户提示（主线程）
-        String message = isServiceStopped ? "VPN 服务已停止" : "停止 VPN 服务失败";
-        new Handler(Looper.getMainLooper()).post(() ->
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
+        new Thread(() -> {
+            boolean isServiceStopped = true;
+            try {
+                // 通过反射获取服务实例
+                Object instance = ReflectionHelper.getInstance("com.example.studyapp.proxy.CustomVpnService", "instance");
+                if (instance != null) {
+                    // 获取并调用 stopService 方法
+                    Method stopServiceMethod = instance.getClass().getDeclaredMethod("stopService", Intent.class);
+                    stopServiceMethod.invoke(instance, intent);
+                    Log.d("stopProxy", "服务已成功停止");
+                } else {
+                    isServiceStopped = false;
+                    Log.w("stopProxy", "实例为空，服务可能未启动");
+                }
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                isServiceStopped = false;
+                Log.e("stopProxy", "无法停止服务: " + e.getMessage(), e);
+            } catch (Exception e) {
+                isServiceStopped = false;
+                Log.e("stopProxy", "停止服务时发生未知错误: " + e.getMessage(), e);
+            }
+
+            // 在主线程中更新用户提示
+            String message = isServiceStopped ? "VPN 服务已停止" : "停止 VPN 服务失败";
+            new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
+        }).start();
     }
 
+    private Intent intent;
     private void handleVpnPermissionResult(int resultCode) {
         if (resultCode == RESULT_OK) {
 
-            Intent intent = new Intent(this, CustomVpnService.class);
+            intent = new Intent(this, CustomVpnService.class);
 
             if (intent == null) {
                 Log.e("handleVpnPermissionResult", "Intent is null. Cannot start service.");

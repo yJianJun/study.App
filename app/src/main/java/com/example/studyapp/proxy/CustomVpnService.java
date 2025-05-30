@@ -2,12 +2,19 @@ package com.example.studyapp.proxy;
 
 import static com.example.studyapp.utils.V2rayUtil.isV2rayRunning;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import androidx.core.app.NotificationCompat;
+
+import com.example.studyapp.R;
 import com.example.studyapp.config.ConfigLoader;
 import com.example.studyapp.utils.V2rayUtil;
 
@@ -35,6 +42,8 @@ public class CustomVpnService extends VpnService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         isVpnActive = true; // 服务启动时激活
+        // 开始前台服务
+        startForeground(NOTIFICATION_ID, createNotification());
         try {
             // 检查 V2ray 是否已启动，避免重复进程
             if (!isV2rayRunning()) {
@@ -50,6 +59,9 @@ public class CustomVpnService extends VpnService {
         }
         return START_STICKY;
     }
+
+    private static final int NOTIFICATION_ID = 1;
+
 
     private void startVpn() {
         try {
@@ -150,6 +162,25 @@ public class CustomVpnService extends VpnService {
         return instance;
     }
 
+    private Notification createNotification() {
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "vpn_service",
+                    "VPN Service",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            notificationManager.createNotificationChannel(channel);
+        }
+        return new NotificationCompat.Builder(this, "vpn_service")
+                .setContentTitle("VPN 服务")
+                .setContentText("VPN 正在运行...")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .build();
+    }
+
+
 
     @Override
     public void onDestroy() {
@@ -181,6 +212,39 @@ public class CustomVpnService extends VpnService {
         // 停止 V2Ray 服务
         V2rayUtil.stopV2Ray();
         Log.i("CustomVpnService", "VPN 服务已销毁");
+    }
+
+    @Override
+    public boolean stopService(Intent name) {
+        isVpnActive = false; // 服务停止时停用
+        super.stopService(name);
+
+        // 停止处理数据包的线程
+        if (vpnTrafficThread != null && vpnTrafficThread.isAlive()) {
+            vpnTrafficThread.interrupt(); // 中断线程
+            try {
+                vpnTrafficThread.join(); // 等待线程停止
+            } catch (InterruptedException e) {
+                Log.e("CustomVpnService", "Error while stopping vpnTrafficThread", e);
+                Thread.currentThread().interrupt(); // 重新设置当前线程的中断状态
+            }
+            vpnTrafficThread = null; // 清空线程引用
+        }
+
+        // 关闭 VPN 接口
+        if (vpnInterface != null) {
+            try {
+                vpnInterface.close();
+            } catch (IOException e) {
+                Log.e("CustomVpnService", "Error closing VPN interface: " + e.getMessage(), e);
+            }
+            vpnInterface = null; // 避免资源泄露
+        }
+
+        // 停止 V2Ray 服务
+        V2rayUtil.stopV2Ray();
+        Log.i("CustomVpnService", "VPN 服务已停止");
+        return true;
     }
 
     private volatile boolean isVpnActive = false; // 标志位控制数据包处理逻辑
