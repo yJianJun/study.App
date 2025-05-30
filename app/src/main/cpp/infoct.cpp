@@ -23,7 +23,7 @@ extern "C"
 JNIEXPORT jlongArray
 
 JNICALL
-Java_com_android_devicetool_Native_getSysInfo(JNIEnv *env, jclass clazz) {
+Java_com_example_studyapp_device_Native_getSysInfo(JNIEnv *env, jclass clazz) {
     struct sysinfo s_info;
     sysinfo(&s_info);
 
@@ -45,7 +45,7 @@ Java_com_android_devicetool_Native_getSysInfo(JNIEnv *env, jclass clazz) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_android_devicetool_Native_getPower(JNIEnv
+Java_com_example_studyapp_device_Native_getPower(JNIEnv
 *env,
 jclass clazz
 ) {
@@ -150,7 +150,7 @@ ReleaseStringUTFChars(boot_id_hex_str, c_boot_id_hex_str
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_android_devicetool_Native_deviceInfoChange(JNIEnv
+Java_com_example_studyapp_device_Native_deviceInfoChange(JNIEnv
 *env,
 jclass clazz
 ) {
@@ -219,7 +219,7 @@ LOGE("FK_ADD_REDIRECT_ITEM tmpret : %d", tmpret);
 extern "C"
 JNIEXPORT jboolean
 JNICALL
-        Java_com_android_devicetool_Native_cpuInfoChange(JNIEnv * env, jclass, jstring
+Java_com_example_studyapp_device_Native_cpuInfoChange(JNIEnv * env, jclass, jstring
 redirectPath) {
 prctl(FK_RESET_IO_REDIRECT);
 prctl(FK_RESET_FILE_PATH_MOCK);
@@ -247,7 +247,7 @@ return ret != -1;
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_android_devicetool_Native_deviceInfoShow(JNIEnv
+Java_com_example_studyapp_device_Native_deviceInfoShow(JNIEnv
 *env,
 jclass clazz
 ) {
@@ -280,7 +280,7 @@ LOGE("/proc/cpuinfo st_ctim %ld", mystat.st_ctim.tv_sec);
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_android_devicetool_Native_deviceInfoReset(JNIEnv
+Java_com_example_studyapp_device_Native_deviceInfoReset(JNIEnv
 *env,
 jclass clazz
 ) {
@@ -295,7 +295,7 @@ prctl(FK_SET_CURRENT_DISK_INFO, NULL);
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_android_devicetool_Native_enableBypassAntiDebug(JNIEnv
+Java_com_example_studyapp_device_Native_enableBypassAntiDebug(JNIEnv
 *env,
 jclass clazz, jint
 uid) {

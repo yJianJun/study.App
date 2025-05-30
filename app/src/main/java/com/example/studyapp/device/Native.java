@@ -6,7 +6,8 @@ public class Native {
             System.loadLibrary("native");
         } catch (UnsatisfiedLinkError e) {
             e.printStackTrace();
-            // 添加日志或通知以便诊断问题
+            // 可添加自定义日志便于调试:
+            System.err.println("Native library failed to load: " + e.getMessage());
         }
     }
 
