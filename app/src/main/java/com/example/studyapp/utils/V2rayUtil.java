@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class V2rayUtil {
-    private  static File v2rayConfig,v2rayBinary;
+    private static File v2rayConfig, v2rayBinary;
 
     public static void startV2Ray(Context context) {
         try {
@@ -78,9 +78,13 @@ public class V2rayUtil {
                 }
 
                 // 检查并复制 config.json 文件
+                v2rayConfig = new File("/data/v2ray/config.json");
 
-
-                v2rayConfig  = new File("/data/v2ray/config.json");
+                File v2rayDirectory = v2rayConfig.getParentFile();
+                if (v2rayDirectory != null && !v2rayDirectory.exists()) {
+                    Log.e("V2rayUtil", "Failed to find directory: " + v2rayDirectory.getAbsolutePath());
+                    return false; // 无法创建目录时直接返回
+                }
 
                 if (!v2rayConfig.exists()) {
                     InputStream configInputStream = context.getAssets().open("v2ray/" + abi + "/config.json");
