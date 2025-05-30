@@ -247,12 +247,6 @@ public class MainActivity extends AppCompatActivity {
 
             intent = new Intent(this, CustomVpnService.class);
 
-            if (intent == null) {
-                Log.e("handleVpnPermissionResult", "Intent is null. Cannot start service.");
-                showToastOnUiThread(this, "Failed to start VPN service due to null intent.");
-                return;
-            }
-
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(intent);
