@@ -2,6 +2,8 @@ package com.example.studyapp.utils;
 
 import android.text.TextUtils;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import org.json.JSONObject;
 
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +35,15 @@ public class IpUtil {
 
     public static String safeClientIp() {
         return getClientIp("https://get.geojs.io/v1/ip");//SG
+    }
+
+    public static boolean isValidIpAddress(String ip) {
+        try {
+            InetAddress.getByName(ip);
+            return true;
+        } catch (UnknownHostException e) {
+            return false;
+        }
     }
 
     public static String checkClientIp(String excludeCountry)

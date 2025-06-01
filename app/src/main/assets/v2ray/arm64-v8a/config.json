@@ -15,13 +15,13 @@
       },
       {
         "tag": "remote",
-        "address": "8.8.8.8"
+        "address": "fakeip"
       }
     ],
     "rules": [
       {
         "server": "local",
-        "outbound": "any"
+        "outboundTag": "any"
       },
       {
         "server": "remote",
@@ -30,8 +30,8 @@
     ],
     "fakeip": {
       "enabled": true,
-      "inet4_range": "198.18.0.0/16",
-      "inet6_range": "fd00::/8"
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18"
     }
   },
   "inbounds": [
@@ -92,6 +92,7 @@
   ],
   "routing": {
     "domainStrategy": "IPOnDemand",
+    "strategy": "rules",
     "rules": [
       {
         "type": "field",
@@ -115,7 +116,12 @@
       },
       {
         "type": "field",
-        "domain": ["cpm-api.resi-prod.resi-oversea.com", "resi-oversea.com"],
+        "domain": ["cpm-api.resi-prod.resi-oversea.com"],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": ["resi-oversea.com"],
         "outboundTag": "direct"
       }
     ]

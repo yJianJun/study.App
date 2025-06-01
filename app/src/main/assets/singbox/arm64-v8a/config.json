@@ -1,0 +1,102 @@
+{
+  "log": { "level": "trace" },
+  "dns": {
+    "final": "cloudflare",
+    "independent_cache": true,
+    "servers": [
+      {
+        "tag": "cloudflare",
+        "address": "tls://1.1.1.1"
+      },
+      {
+        "tag": "local",
+        "address": "tls://1.1.1.1",
+        "detour": "direct"
+      },
+      {
+        "tag": "remote",
+        "address": "fakeip"
+      }
+    ],
+    "rules": [
+      {
+        "server": "local",
+        "outbound": "any"
+      },
+      {
+        "server": "remote",
+        "query_type": ["A", "AAAA"]
+      }
+    ],
+    "fakeip": {
+      "enabled": true,
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18"
+    }
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": ["172.19.0.1/28"],
+      "auto_route": true,
+      "sniff": true,
+      "strict_route": false,
+      "domain_strategy": "ipv4_only"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "socks",
+      "tag": "socks-out",
+      "version": "5",
+      "network": "tcp",
+      "udp_over_tcp": {
+        "enabled": true
+      },
+      "username": "cut_team_protoc_vast-zone-custom-region-us",
+      "password": "Leoliu811001",
+      "server": "105bd58a50330382.na.ipidea.online",
+      "server_port": 2333
+    },
+    {
+      "type": "dns",
+      "tag": "dns-out"
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "final": "socks-out",
+    "auto_detect_interface": true,
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "dns-out"
+      },
+      {
+        "protocol": ["stun", "quic"],
+        "outbound": "block"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "ip_cidr": "8.217.74.194/32",
+        "outbound": "direct"
+      },
+      {
+        "domain": "cpm-api.resi-prod.resi-oversea.com",
+        "domain_suffix": "resi-oversea.com",
+        "outbound": "direct"
+      }
+    ]
+  }
+}
