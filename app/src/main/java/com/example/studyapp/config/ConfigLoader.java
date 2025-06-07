@@ -15,10 +15,10 @@ import java.io.InputStreamReader;
 public class ConfigLoader {
 
     // 从 assets 中读取 JSON 文件并解析
-    public static String getTunnelAddress() {
+    public static String getTunnelAddress(Context context) {
         String jsonStr;
         // 获取应用私有目录的文件路径
-        File configFile = new File("/data/v2ray/config.json");
+        File configFile = new File(context.getCodeCacheDir(),"config.json");
 
         // 检查文件是否存在
         if (!configFile.exists()) {

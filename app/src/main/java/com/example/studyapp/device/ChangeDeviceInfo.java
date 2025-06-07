@@ -122,6 +122,12 @@ public class ChangeDeviceInfo {
         if (context == null) {
             throw new IllegalArgumentException("Context cannot be null");
         }
+        if (key == null || key.isEmpty()) {
+            throw new IllegalArgumentException("Key cannot be null or empty");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("Value cannot be null");
+        }
 
         try {
             // 获取类对象
@@ -133,20 +139,21 @@ public class ChangeDeviceInfo {
             putStringMethod.invoke(null, context.getContentResolver(), key, value);
             Log.d("Debug", "putString executed successfully.");
         } catch (ClassNotFoundException e) {
-            Log.e("Reflection Error", "Class not found", e);
+            Log.w("Reflection Error", "Class not found: android.provider.VCloudSettings$Global. This may not be supported on this device.");
         } catch (NoSuchMethodException e) {
-            Log.e("Reflection Error", "Method not found", e);
+            Log.w("Reflection Error", "Method putString not available. Ensure your target Android version supports it.");
         } catch (InvocationTargetException e) {
-            Throwable cause = e.getTargetException();  // 获取异常的根原因
+            Throwable cause = e.getTargetException();
             if (cause instanceof SecurityException) {
-                Log.e("Reflection Error", "SecurityException: Permission denied. You need WRITE_SECURE_SETTINGS.", cause);
+                Log.e("Reflection Error", "Permission denied. Ensure WRITE_SECURE_SETTINGS permission is granted.", cause);
             } else {
                 Log.e("Reflection Error", "InvocationTargetException during putString invocation", e);
             }
         } catch (Exception e) {
-            Log.e("Reflection Error", "Unexpected error during putString invocation", e);
+            Log.e("Reflection Error", "Unexpected error during putString invocation: " + e.getMessage());
         }
     }
+
     public static void resetChangedDeviceInfo(String current_pkg_name,Context context) {
         try {
             Native.setBootId("00000000000000000000000000000000");

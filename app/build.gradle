@@ -21,6 +21,11 @@ android {
                 arguments "-DANDROID_ABI=arm64-v8a"
             }
         }
+        sourceSets {
+            main {
+                jniLibs.srcDirs = ['src/main/jniLibs']
+            }
+        }
     }
 
     buildTypes {
@@ -58,6 +63,7 @@ dependencies {
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
 
+    implementation 'androidx.work:work-runtime:2.9.0'
     // Retrofit 核心库
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
 

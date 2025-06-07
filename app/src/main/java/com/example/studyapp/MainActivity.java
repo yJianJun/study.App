@@ -3,8 +3,6 @@ package com.example.studyapp;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.content.ComponentName;
-import android.content.ServiceConnection;
 import android.net.Uri;
 import android.net.VpnService;
 import android.content.Context;
@@ -24,19 +22,22 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 
-import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 import com.example.studyapp.autoJS.AutoJsUtil;
 import com.example.studyapp.device.ChangeDeviceInfo;
 import com.example.studyapp.proxy.CustomVpnService;
 import com.example.studyapp.utils.ReflectionHelper;
 
+import com.example.studyapp.worker.CheckAccessibilityWorker;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        System.setProperty("java.library.path", this.getApplicationInfo().nativeLibraryDir);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             // 针对 Android 10 或更低版本检查普通存储权限
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -110,6 +112,9 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "resetDeviceInfo button not found", Toast.LENGTH_SHORT).show();
         }
 
+        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(CheckAccessibilityWorker.class, 15, TimeUnit.MINUTES)
+            .build();
+        WorkManager.getInstance(this).enqueue(workRequest);
     }
 
     private void startProxyVpn(Context context) {

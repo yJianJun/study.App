@@ -1,8 +1,6 @@
 package com.example.studyapp.proxy;
 
 import static com.example.studyapp.utils.IpUtil.isValidIpAddress;
-import static com.example.studyapp.utils.V2rayUtil.isV2rayRunning;
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -12,30 +10,21 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
-
 import androidx.core.app.NotificationCompat;
-
 import com.example.studyapp.R;
 import com.example.studyapp.config.ConfigLoader;
 import com.example.studyapp.utils.SingboxUtil;
-import com.example.studyapp.utils.V2rayUtil;
-
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class CustomVpnService extends VpnService {
 
-
-  private static final String TUN_ADDRESS = ConfigLoader.getTunnelAddress(); // TUN 的 IP 地址
   private static final int PREFIX_LENGTH = 28;           // 子网掩码
 
   private Thread vpnTrafficThread; // 保存线程引用
@@ -53,7 +42,7 @@ public class CustomVpnService extends VpnService {
     // 开始前台服务
     startForeground(NOTIFICATION_ID, createNotification());
     try {
-      // 检查 V2ray 是否已启动，避免重复进程
+      // 检查 Singbox 是否已启动，避免重复进程
 
       SingboxUtil.startSingBox(getApplicationContext());
       // 启动 VPN 流量服务
@@ -72,10 +61,10 @@ public class CustomVpnService extends VpnService {
 
       // 不再需要手动验证 TUN_ADDRESS 和 PREFIX_LENGTH
       // 直接使用系统权限建立虚拟网卡，用于 TUN 接口和流量捕获
-      builder.addAddress(TUN_ADDRESS, PREFIX_LENGTH); // 保证 TUN 接口 IP 地址仍与 v2ray 配置文件保持一致
+      builder.addAddress(ConfigLoader.getTunnelAddress(this), PREFIX_LENGTH); // 保证 TUN 接口 IP 地址仍与 singbox 配置文件保持一致
       builder.addRoute("0.0.0.0", 0);                // 捕获所有 IPv4 流量
 
-      // DNS 部分，如果有需要，也可以简化或直接保留 v2ray 配置提供的
+      // DNS 部分，如果有需要，也可以简化或直接保留 singbox 配置提供的
       List<String> dnsServers = getSystemDnsServers();
       if (dnsServers.isEmpty()) {
         // 如果未能从系统中获取到 DNS 地址，添加备用默认值
@@ -100,7 +89,7 @@ public class CustomVpnService extends VpnService {
         throw new IllegalStateException("VPN Interface establishment failed");
       }
 
-      // 核心：启动流量转发服务，此后转发逻辑由 v2ray 接管
+      // 核心：启动流量转发服务，此后转发逻辑由 singbox 接管
       new Thread(() -> handleVpnTraffic(vpnInterface)).start();
 
     } catch (Exception e) {
@@ -175,7 +164,7 @@ public class CustomVpnService extends VpnService {
       Log.d("CustomVpnService", "Packet Info: TCP=" + isTcpPacket + ", DNS=" + isDnsPacket + ", Length=" + length);
 
       if (isTcpPacket || isDnsPacket) {
-        Log.i("CustomVpnService", "Forwarding to V2Ray. Packet Length: " + length);
+        Log.i("CustomVpnService", "Forwarding to Singbox. Packet Length: " + length);
         return true;
       }
     } catch (ArrayIndexOutOfBoundsException e) {
@@ -215,7 +204,7 @@ public class CustomVpnService extends VpnService {
       vpnInterface = null; // 避免资源泄露
     }
 
-    // 停止 V2Ray 服务
+    // 停止 Singbox 服务
     SingboxUtil.stopSingBox();
     Log.i("CustomVpnService", "VPN 服务已停止");
     return true;
@@ -248,7 +237,7 @@ public class CustomVpnService extends VpnService {
       vpnInterface = null; // 避免资源泄露
     }
 
-    // 停止 V2Ray 服务
+    // 停止 Singbox 服务
     SingboxUtil.stopSingBox();
     Log.i("CustomVpnService", "VPN 服务已销毁");
   }
@@ -320,18 +309,27 @@ public class CustomVpnService extends VpnService {
   private Notification createNotification() {
     NotificationManager notificationManager =
         (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      String channelId = "vpn_service_channel";
       NotificationChannel channel = new NotificationChannel(
-          "vpn_service",
+          channelId,
           "VPN Service",
-          NotificationManager.IMPORTANCE_DEFAULT
+          NotificationManager.IMPORTANCE_LOW // 设置为低优先级，避免打扰用户
       );
-      notificationManager.createNotificationChannel(channel);
+      channel.setDescription("通知用户 VPN 服务正在运行中");
+
+      // 注册通道
+      if (notificationManager != null) {
+        notificationManager.createNotificationChannel(channel);
+      }
     }
-    return new NotificationCompat.Builder(this, "vpn_service")
+
+    return new NotificationCompat.Builder(this, "vpn_service_channel")
         .setContentTitle("VPN 服务")
-        .setContentText("VPN 正在运行...")
-        .setSmallIcon(R.drawable.ic_launcher_foreground)
+        .setContentText("VPN 正在运行中...")
+        .setSmallIcon(R.drawable.ic_launcher_foreground) // 需要替换成实际图标资源
+        .setPriority(NotificationCompat.PRIORITY_LOW) // 设置为低优先级
         .build();
   }
 

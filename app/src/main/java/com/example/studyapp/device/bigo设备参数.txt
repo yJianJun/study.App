@@ -1,0 +1,265 @@
+参数	含义	获取代码(获取结果之后的其他运算不做加入)	结果	
+User-Agent	获取WebView默认User-Agent字符串，包含了设备信息、浏览器版本等信息	WebSettings.getDefaultUserAgent(context)	"Mozilla/5.0 (Linux; Android 10; Pixel Build/QP1A.191005.007.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/135.0.7049.113 Mobile Safari/537.36
+"	
+os_ver	安卓版本号	Build.VERSION.RELEASE	10	
+os_lang	获取语言	locale.getLanguage()	zh	
+vendor	设备制造商	Build.MANUFACTURER	google	
+model	设备型号	Build.MODEL	pixel	
+dpi	设备屏幕密度	context.getResources().getDisplayMetrics().density	26	
+dpi_f	分辨率	"   public static Point d(Context context) {
+        try {
+            Display defaultDisplay = ((WindowManager) context.getSystemService(""window"")).getDefaultDisplay();
+            Point point = new Point();
+            defaultDisplay.getRealSize(point);
+            return point;
+        } catch (Throwable unused) {
+            return new Point();
+        }
+    }
+point.x
+point.y"	411x731	
+resolution	分辨率	"
+    public static Point d(Context context) {
+        try {
+            Display defaultDisplay = ((WindowManager) context.getSystemService(""window"")).getDefaultDisplay();
+            Point point = new Point();
+            defaultDisplay.getRealSize(point);
+            return point;
+        } catch (Throwable unused) {
+            return new Point();
+        }
+    }
+point.x
+point.y"	1080x1920	
+net	网络类型	"    public static int a(Context context) {
+        if (context == null) {
+            return 0;
+        }
+        try {
+            NetworkInfo activeNetworkInfo = ((ConnectivityManager) context.getApplicationContext().getSystemService(""connectivity"")).getActiveNetworkInfo();
+            if (activeNetworkInfo == null) {
+                return 0;
+            }
+            int type = activeNetworkInfo.getType();
+            if (type == 1) {
+                return 3;
+            }
+            if (type != 0) {
+                return 0;
+            }
+            switch (activeNetworkInfo.getSubtype()) {
+            }
+            return 0;
+        } catch (Throwable th) {
+            sg.bigo.ads.common.t.a.a(0, ""NetworkUtil"", ""exception on get network info:"" + th.getMessage());
+            return 0;
+        }
+    }
+"	wifi	
+tz	时区	"TimeZone.getDefault().getDisplayName(false, 0, Locale.ENGLISH)"	gmt+08:00	
+isp	"初始化时为空，获取到READ_PHONE_STATE电话权限之后,获取值为运营商名称"	"    public static String d(Context context) {
+        if (context == null) {
+            return """";
+        }
+        if (""-1"".equals(d)) {
+            d = """";
+            if (!sg.bigo.ads.common.utils.c.a(context, ""android.permission.READ_PHONE_STATE"")) {
+                return d;
+            }
+            try {
+                d = ((TelephonyManager) context.getSystemService(""phone"")).getSimOperatorName();
+            } catch (Exception unused) {
+            }
+        }
+        return d;
+    }
+
+"	""""""	
+country	国家，初始化后从配置文件里获取us作为国家代码	locale.getCountry()	cn	
+gaid	广告id	" public static sg.bigo.ads.common.a a(Context context, long j) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            throw new IllegalStateException(""Google Play Services info can't be accessed from the main thread"");
+        }
+        try {
+            context.getPackageManager().getPackageInfo(""com.android.vending"", 0);
+            a aVar = new a(j);
+            Intent intent = new Intent(""com.google.android.gms.ads.identifier.service.START"");
+            intent.setPackage(""com.google.android.gms"");
+            try {
+                if (!context.bindService(intent, aVar, 1)) {
+                    throw new IOException(""Google Play connection failed"");
+                }
+                try {
+                    if (aVar.b) {
+                        throw new IllegalStateException();
+                    }
+                    aVar.b = true;
+                    b bVar = new b(aVar.c.poll(aVar.a, TimeUnit.MILLISECONDS));
+                    String a2 = bVar.a();
+                    Boolean b2 = bVar.b();
+                    if (a2 != null && b2 != null) {
+                        return new sg.bigo.ads.common.a(a2, b2.booleanValue());
+                    }
+                    context.unbindService(aVar);
+                    return null;
+                } catch (Exception e) {
+                    throw e;
+                }
+            } finally {
+                context.unbindService(aVar);
+            }
+        } catch (Exception e2) {
+            throw e2;
+        }
+    }
+"	168b51f4-76f0-448a-8a4e-ddd438588338	
+hw_id	"当设备是华为时,就去获取华为的oaid"	"    private static e a(Context context) {
+        boolean bindService;
+        e a = e.a(context);
+        if (!a.a.isEmpty()) {
+            return a;
+        }
+        Intent intent = new Intent(""com.uodis.opendevice.OPENIDS_SERVICE"");
+        intent.setPackage(""com.huawei.hwid"");
+        try {
+            a.b = true;
+            bindService = context.bindService(intent, a, 1);
+        } catch (Exception unused) {
+        } catch (Throwable th) {
+            a.a();
+            throw th;
+        }
+        if (bindService) {
+            if (!bindService) {
+                a.a();
+            }
+            return a;
+        }
+        if (bindService) {
+            return null;
+        }
+        a.a();
+        return null;
+    }
+"	""""""	
+fire_id	"当设备是亚马逊时,就去获取亚马逊的广告id"	"  public static sg.bigo.ads.common.a a(Context context) {
+        String str = """";
+        boolean z = true;
+        if (""Amazon"".equalsIgnoreCase(Build.MANUFACTURER)) {
+            try {
+                ContentResolver contentResolver = context.getContentResolver();
+                if (Settings.Secure.getInt(contentResolver, ""limit_ad_tracking"") == 0) {
+                    z = false;
+                }
+                str = Settings.Secure.getString(contentResolver, ""advertising_id"");
+            } catch (Settings.SettingNotFoundException unused) {
+            }
+        }
+        return new sg.bigo.ads.common.a(str, z);
+    }
+"	""""""	
+af_id	"如果加载了af sdk,就去获取appsflyer uid"	"    public static String a(Context context) {
+        if (!TextUtils.isEmpty(a) || !b) {
+            return a;
+        }
+        try {
+            Class<?> cls = Class.forName(""com.appsflyer.AppsFlyerLib"");
+            Object invoke = cls.getMethod(""getAppsFlyerUID"", Context.class).invoke(cls.getMethod(""getInstance"", new Class[0]).invoke(null, new Object[0]), context);
+            if (invoke instanceof String) {
+                a = (String) invoke;
+            }
+        } catch (Exception unused) {
+            b = false;
+        }
+        return a;
+    }
+"	""""""	
+cpu_core_num	获取cpu核心数	"    public static int a() {
+        if (a) {
+            return c;
+        }
+        int a2 = sg.bigo.ads.common.x.a.a();
+        c = a2;
+        if (a2 != 0) {
+            a = true;
+            return a2;
+        }
+        try {
+            c = new File(""/sys/devices/system/cpu/"").listFiles(new C0058a()).length;
+        } catch (Throwable unused) {
+        }
+        if (c <= 1) {
+            c = Runtime.getRuntime().availableProcessors();
+        }
+        a = true;
+        sg.bigo.ads.common.x.a.a(c);
+        return c;
+    }
+
+"	4	
+cpu_clock_speed	获取cpu的最大频率	"""/sys/devices/system/cpu/cpu"" + i3 + ""/cpufreq/cpuinfo_max_freq"""	2150	
+total_memory	获取系统总内存大小	"
+    public static long b(Context context) {
+        ActivityManager.MemoryInfo d2 = d(context);
+        if (d2 == null) {
+            return 0L;
+        }
+        return f.a(d2.totalMem, 3);
+    }
+"	3765	
+free_memory	获取系统可用内存大小	"  public static long a(Context context) {
+        ActivityManager.MemoryInfo d2 = d(context);
+        if (d2 == null) {
+            return 0L;
+        }
+        return f.a(d2.availMem, 3);
+    }
+
+"	1268	
+rom_free_in	获取内部存储空间的可用空间大小	"    private static long f() {
+        StatFs statFs = new StatFs(Environment.getDataDirectory().getPath());
+        return statFs.getBlockSizeLong() * statFs.getAvailableBlocksLong();
+    }
+"	16734564352	
+rom_free_ext	获取外部存储空间的可用空间大小	"           StatFs statFs = new StatFs(Environment.getExternalStorageDirectory().getPath());
+            return statFs.getBlockSizeLong() * statFs.getAvailableBlocksLong();
+"	16734556160	
+sim_country	"获取设备当前网络的国家/地区代码
+如果网络国家代码为空，则获取SIM卡的国家代码
+需要READ_PHONE_STATE权限"	" public static String e(Context context) {
+        if (context == null) {
+            return """";
+        }
+        if (""-1"".equals(e)) {
+            e = """";
+            if (!sg.bigo.ads.common.utils.c.a(context, ""android.permission.READ_PHONE_STATE"")) {
+                return e;
+            }
+            try {
+                TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(""phone"");
+                String networkCountryIso = telephonyManager.getNetworkCountryIso();
+                e = networkCountryIso;
+                if (TextUtils.isEmpty(networkCountryIso)) {
+                    e = telephonyManager.getSimCountryIso();
+                }
+            } catch (Exception unused) {
+            }
+        }
+        return e;
+    }
+"	""""""	
+system_country	国家代码	locale.getCountry()	cn	
+bat_stat	"获取设备的电池状态
+BatteryManager.BATTERY_STATUS_UNKNOWN（1）：未知状态
+BatteryManager.BATTERY_STATUS_CHARGING（2）：正在充电
+BatteryManager.BATTERY_STATUS_DISCHARGING（3）：正在放电
+BatteryManager.BATTERY_STATUS_NOT_CHARGING（4）：未充电
+BatteryManager.BATTERY_STATUS_FULL（5）：已充满"	"   registerReceiver = context.registerReceiver(null, new IntentFilter(""android.intent.action.BATTERY_CHANGED""));
+registerReceiver.getIntExtra(""status"", -1)"	2	
+bat_num	获取设备的电池电量百分比0~100	" registerReceiver = context.registerReceiver(null, new IntentFilter(""android.intent.action.BATTERY_CHANGED""));
+registerReceiver.getIntExtra(""level"", -1)"	76	
+bat_scale	获取电池电量的最大刻度	" registerReceiver = context.registerReceiver(null, new IntentFilter(""android.intent.action.BATTERY_CHANGED""));
+registerReceiver.getIntExtra(""scale"", -1)"	100	
+lat_enable	是否限制gaid的获取	和上面获取gaid的代码一致	0	
+hw_lat_enable	是否限制hw_id的获取		1	
+fire_lat_enable	是否限制fire_id的获取		1	
