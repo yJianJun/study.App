@@ -54,8 +54,7 @@
           android:name=".service.MyAccessibilityService"
           android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
           android:enabled="true"
-          android:exported="false"
-          android:foregroundServiceType="accessibility" >
+          android:exported="false">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>

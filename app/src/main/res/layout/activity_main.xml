@@ -1,48 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp"
-    android:background="@drawable/background"
-    tools:context=".MainActivity">
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:padding="16dp"
+  android:background="@drawable/background"
+  tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/run_script_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="开始运行脚本"
-        android:contentDescription="运行脚本按钮" />
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:gravity="center"
+      android:padding="16dp">
 
-    <Button
-        android:id="@+id/connectVpnButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="开启vpn"
-        android:contentDescription="开启 VPN 按钮" />
+        <Button
+          android:id="@+id/run_script_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="开始运行脚本"
+          android:contentDescription="运行脚本按钮，用于启动自动化脚本" />
 
-    <Button
-        android:id="@+id/disconnectVpnButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="断开vpn"
-        android:contentDescription="断开 VPN 按钮" />
+        <Button
+          android:id="@+id/connectVpnButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="开启 VPN"
+          android:contentDescription="开启 VPN 按钮，用于连接到指定 VPN 服务" />
 
-    <Button
-        android:id="@+id/modifyDeviceInfoButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="修改设备信息"
-        android:contentDescription="修改设备信息按钮" />
+        <Button
+          android:id="@+id/disconnectVpnButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="断开 VPN"
+          android:contentDescription="断开 VPN 按钮，用于断开当前连接的 VPN" />
 
-    <Button
-        android:id="@+id/resetDeviceInfoButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="重置设备信息"
-        android:contentDescription="重置设备信息按钮" />
-</LinearLayout>
+        <Button
+          android:id="@+id/switchVpnButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="切换 VPN"
+          android:contentDescription="切换 VPN 按钮，用于从一个 VPN 切换到另一个 VPN" />
+
+        <Button
+          android:id="@+id/modifyDeviceInfoButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="修改设备信息"
+          android:contentDescription="修改设备信息按钮，用于编辑和更改设备信息" />
+
+        <Button
+          android:id="@+id/resetDeviceInfoButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="重置设备信息"
+          android:contentDescription="重置设备信息按钮，用于恢复到默认的设备信息" />
+
+    </LinearLayout>
+</ScrollView>

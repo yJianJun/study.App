@@ -1,16 +1,9 @@
 package com.example.studyapp.device;
 
-import android.app.ActivityManager;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.ProxyInfo;
 import android.util.Log;
-import android.view.View;
-import android.widget.Toast;
 
-import com.example.studyapp.R;
-import com.example.studyapp.utils.ReflectionHelper;
 import com.example.studyapp.utils.ShellUtils;
 
 import org.json.JSONObject;
@@ -18,7 +11,7 @@ import org.json.JSONObject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class ChangeDeviceInfo {
+public class ChangeDeviceInfoUtil {
 
     public static void changeDeviceInfo(String current_pkg_name,Context context) {
         // 指定包名优先级高于全局
@@ -81,12 +74,12 @@ public class ChangeDeviceInfo {
 
 
         } catch (Throwable e) {
-            Log.e("ChangeDeviceInfo", "Error occurred while changing device info", e);
+            Log.e("ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
             throw new RuntimeException("Error occurred in changeDeviceInfo", e);
         }
 
         if (!ShellUtils.hasRootAccess()) {
-            Log.e("ChangeDeviceInfo", "Root access is required to execute system property changes");
+            Log.e("ChangeDeviceInfoUtil", "Root access is required to execute system property changes");
             return;
         }
 
