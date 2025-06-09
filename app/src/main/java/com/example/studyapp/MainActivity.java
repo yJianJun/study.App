@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -36,6 +37,24 @@ public class MainActivity extends AppCompatActivity {
   private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
 
   private static final int ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE = 1001;
+
+  // 假设我们从配置文件中提取出了以下 name 项数据（仅为部分示例数据）
+  private final String[] proxyNames = {
+      "mr", "sr", "bq", "ml", "ht", "ga", "mk", "by", "pr", "hr", "hu",
+      "in", "gt", "at", "kh", "bn", "mg", "kr", "ca", "gh", "ma", "md",
+      "je", "pa", "ba", "mm", "ir", "gy", "mt", "ae", "es", "ng", "ls",
+      "ag", "pk", "bd", "kn", "mw", "ve", "hk", "cv", "hn", "tm", "us",
+      "cz", "ly", "gb", "kz", "it", "bh", "sn", "fi", "co", "sx", "bm",
+      "fj", "cw", "st", "bw", "fr", "bb", "tg", "ci", "gd", "ne", "bj",
+      "nz", "rs", "do", "cl", "lb", "nl", "re", "aw", "ug", "sv", "ar",
+      "jo", "bg", "jp", "rw", "py", "mn", "ec", "uz", "ro", "cu", "gu",
+      "xk", "sy", "so", "zm", "tz", "ni", "sc", "my", "gf", "na", "zw",
+      "la", "et", "ao", "ua", "om", "np", "mx", "mz", "dm", "ye", "gi",
+      "cr", "cm", "ph", "am", "th", "ch", "br", "sd", "ie", "bo", "bs",
+      "tc", "vg", "pe", "sa", "dk", "tn", "ee", "jm", "lc", "pt", "qa",
+      "ge", "ps"
+  };
+
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -116,18 +135,49 @@ public class MainActivity extends AppCompatActivity {
       Toast.makeText(this, "resetDeviceInfo button not found", Toast.LENGTH_SHORT).show();
     }
 
-    // try {
-    //   if (!ClashUtil.checkProxy(this)) {
-    //     startProxyVpn(this);
-    //   }else {
-    //     ClashUtil.switchProxyGroup("GLOBAL","us", "127.0.0.1:6170");
-    //   };
-    //     ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
-    //     AutoJsUtil.runAutojsScript(this);
-    // } catch (InterruptedException e) {
-    //   throw new RuntimeException(e);
-    // }
+    // 获取输入框和按钮
+    EditText inputNumber = findViewById(R.id.input_number);
+    Button executeButton = findViewById(R.id.execute_button);
+
+    // 设置按钮的点击事件
+    executeButton.setOnClickListener(v -> executeLogic(inputNumber) );
   }
+
+  // 提取的独立方法
+  private void executeLogic(EditText inputNumber) {
+    String numberText = inputNumber.getText().toString(); // 获取输入框内容
+
+    if (numberText.isEmpty()) {
+      Toast.makeText(this, "请输入一个数字", Toast.LENGTH_SHORT).show();
+      return; // 退出执行
+    }
+
+    int number;
+    try {
+      number = Integer.parseInt(numberText); // 将输入内容转换为整数
+    } catch (NumberFormatException e) {
+      Toast.makeText(this, "请输入有效的数字", Toast.LENGTH_SHORT).show();
+      return; // 输入无效的退出
+    }
+
+    // 循环执行逻辑代码
+    for (int i = 0; i < number; i++) {
+      // 假设这里是您需要选中的代码逻辑
+      try {
+        if (!ClashUtil.checkProxy(this)) {
+          startProxyVpn(this);
+        } else {
+          ClashUtil.switchProxyGroup("GLOBAL", proxyNames[i], "127.0.0.1:6170");
+        }
+        ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
+        AutoJsUtil.runAutojsScript(this);
+        Toast.makeText(this, "第 " + (i + 1) + " 次执行完成", Toast.LENGTH_SHORT).show();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
 
   private void startProxyVpn(Context context) {
     if (!isNetworkAvailable(context)) {
