@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
         if (!ClashUtil.checkProxy(this)) {
           startProxyVpn(this);
         } else {
-          ClashUtil.switchProxyGroup("GLOBAL", proxyNames[i], "127.0.0.1:6170");
+          ClashUtil.switchProxyGroup("GLOBAL", proxyNames[i], "http://127.0.0.1:6170");
         }
         ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
         AutoJsUtil.runAutojsScript(this);
