@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button modifyDeviceInfoButton = findViewById(R.id.modifyDeviceInfoButton);
     if (modifyDeviceInfoButton != null) {
-      modifyDeviceInfoButton.setOnClickListener(v -> ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170"));
+      modifyDeviceInfoButton.setOnClickListener(v -> ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(),this));
     } else {
       Toast.makeText(this, "modifyDeviceInfo button not found", Toast.LENGTH_SHORT).show();
     }
