@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.example.studyapp.utils.ShellUtils;
 
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import org.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
@@ -72,6 +73,58 @@ public class ChangeDeviceInfoUtil {
             callVCloudSettings_put(current_pkg_name + "_screen.getCurrentBounds.stack", ".getDeviceInfo",context);
             callVCloudSettings_put(current_pkg_name + "_screen.getMaximumBounds.stack", ".getDeviceInfo",context);
 
+            // **User-Agent**
+            String defaultUserAgent = System.getProperty("http.agent");  // 默认 User-Agent
+            callVCloudSettings_put(current_pkg_name + "_user_agent", defaultUserAgent, context);
+
+            // **os_ver**
+            String osVer = System.getProperty("os.version");  // 系统版本
+            callVCloudSettings_put(current_pkg_name + "_os_ver", osVer, context);
+
+            // **os_lang**
+            String osLang = context.getResources().getConfiguration().locale.getLanguage();  // 系统语言
+            callVCloudSettings_put(current_pkg_name + "_os_lang", osLang, context);
+
+            // **dpi**
+            JSONObject densityJson = new JSONObject();
+            densityJson.put("density", context.getResources().getDisplayMetrics().density);
+            callVCloudSettings_put(current_pkg_name + "_dpi", densityJson.toString(), context);
+
+            // **dpi_f**
+            JSONObject realResolutionJson = new JSONObject();
+            realResolutionJson.put("width", 411);
+            realResolutionJson.put("height", 731);
+            callVCloudSettings_put(current_pkg_name + "_dpi_f", realResolutionJson.toString(), context);
+
+            // **tz** (时区)
+            String tz = java.util.TimeZone.getDefault().getID();  // 系统时区
+            callVCloudSettings_put(current_pkg_name + "_tz", tz, context);
+
+            // **isp** (网络运营商)
+            android.telephony.TelephonyManager telephonyManager = (android.telephony.TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            String isp = telephonyManager != null ? telephonyManager.getNetworkOperatorName() : "unknown";
+            callVCloudSettings_put(current_pkg_name + "_isp", isp, context);
+
+            // **country**
+            String country = context.getResources().getConfiguration().locale.getCountry();
+            callVCloudSettings_put(current_pkg_name + "_country", country, context);
+
+            // **net** (网络类型：WiFi/流量)
+            android.net.ConnectivityManager connectivityManager = (android.net.ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            String netType = (connectivityManager != null &&
+                connectivityManager.getActiveNetworkInfo() != null &&
+                connectivityManager.getActiveNetworkInfo().isConnected()) ?
+                connectivityManager.getActiveNetworkInfo().getTypeName() : "unknown";
+            callVCloudSettings_put(current_pkg_name + "_net", netType, context);
+
+            // **gaid** (Google 广告 ID)
+            try {
+                AdvertisingIdClient.Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(context);
+                String gaid = adInfo != null ? adInfo.getId() : "unknown";
+                callVCloudSettings_put(current_pkg_name + "_gaid", gaid, context);
+            } catch (Throwable e) {
+                Log.e("ChangeDeviceInfoUtil", "Failed to get GAID", e);
+            }
 
         } catch (Throwable e) {
             Log.e("ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
