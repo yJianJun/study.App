@@ -2,11 +2,15 @@ package com.example.studyapp.device;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.util.Log;
 
 import com.example.studyapp.utils.ShellUtils;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
@@ -105,17 +109,82 @@ public class ChangeDeviceInfoUtil {
             String isp = telephonyManager != null ? telephonyManager.getNetworkOperatorName() : "unknown";
             callVCloudSettings_put(current_pkg_name + "_isp", isp, context);
 
-            // **country**
-            String country = context.getResources().getConfiguration().locale.getCountry();
-            callVCloudSettings_put(current_pkg_name + "_country", country, context);
-
             // **net** (网络类型：WiFi/流量)
-            android.net.ConnectivityManager connectivityManager = (android.net.ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            String netType = (connectivityManager != null &&
-                connectivityManager.getActiveNetworkInfo() != null &&
-                connectivityManager.getActiveNetworkInfo().isConnected()) ?
-                connectivityManager.getActiveNetworkInfo().getTypeName() : "unknown";
-            callVCloudSettings_put(current_pkg_name + "_net", netType, context);
+            ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            if (connectivityManager != null) {
+                Network activeNetwork = connectivityManager.getActiveNetwork();
+                NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+
+                String netType = "Unknown";
+                if (capabilities != null) {
+                    if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        netType = "WiFi";
+                    } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                        netType = "Cellular";
+                    }
+                }
+
+                callVCloudSettings_put(current_pkg_name + "_net", netType, context);
+            }
+
+            // **广告标识符 (advertiserId)** 及 **启用状态**
+            boolean isAdIdEnabled = true; // 默认启用广告 ID
+            String advertiserId = "test-advertiser-id"; // 模拟广告 ID
+            callVCloudSettings_put(current_pkg_name + ".advertiserId", advertiserId, context);
+            callVCloudSettings_put(current_pkg_name + ".advertiserIdEnabled", String.valueOf(isAdIdEnabled), context);
+
+            // **AppsFlyer 参数**
+            callVCloudSettings_put(current_pkg_name + ".af_currentstore", "Google Play", context);
+            callVCloudSettings_put(current_pkg_name + ".af_events_api", "2.0", context);
+            callVCloudSettings_put(current_pkg_name + ".af_installstore", "official", context);
+            callVCloudSettings_put(current_pkg_name + ".af_timestamp", String.valueOf(System.currentTimeMillis()), context);
+            callVCloudSettings_put(current_pkg_name + ".af_v", "v1.0", context);
+            callVCloudSettings_put(current_pkg_name + ".af_v2", "v2.0", context);
+
+            // **设备信息参数**
+            callVCloudSettings_put(current_pkg_name + ".android_id", "android-test-id", context);
+            callVCloudSettings_put(current_pkg_name + ".app_version_code", "100", context);
+            callVCloudSettings_put(current_pkg_name + ".app_version_name", "1.0.0", context);
+            callVCloudSettings_put(current_pkg_name + ".brand", android.os.Build.BRAND, context);
+            callVCloudSettings_put(current_pkg_name + ".device", android.os.Build.DEVICE, context);
+            callVCloudSettings_put(current_pkg_name + ".model", android.os.Build.MODEL, context);
+
+            // **语言及区域**
+            String lang = context.getResources().getConfiguration().locale.getLanguage();
+            String langCode = context.getResources().getConfiguration().locale.toString();
+            String country = context.getResources().getConfiguration().locale.getCountry();
+            callVCloudSettings_put(current_pkg_name + ".lang", lang, context);
+            callVCloudSettings_put(current_pkg_name + ".lang_code", langCode, context);
+            callVCloudSettings_put(current_pkg_name + ".country", country, context);
+
+            // **传感器模拟数据**
+            JSONObject sensorsJson = new JSONObject();
+            sensorsJson.put("sN", "TestSensor"); // 传感器名称
+            sensorsJson.put("sT", "type_sample"); // 传感器类型
+            sensorsJson.put("sV", "1.2"); // 传感器版本
+            JSONArray sensorValues = new JSONArray();
+            sensorValues.put("v0");
+            sensorValues.put("v1");
+            sensorValues.put("v2");
+            sensorsJson.put("sVE", sensorValues);
+            callVCloudSettings_put(current_pkg_name + ".deviceData.sensors.[0]", sensorsJson.toString(), context);
+
+            // **电量、电磁 MCC/MNC**
+            callVCloudSettings_put(current_pkg_name + ".batteryLevel", "85", context);
+            callVCloudSettings_put(current_pkg_name + ".cell.mcc", "310", context); // MCC: 示例
+            callVCloudSettings_put(current_pkg_name + ".cell.mnc", "260", context); // MNC: 示例
+
+            // **日期与时间戳**
+            callVCloudSettings_put(current_pkg_name + ".date1", String.valueOf(System.currentTimeMillis()), context);
+            callVCloudSettings_put(current_pkg_name + ".date2", String.valueOf(System.nanoTime()), context);
+
+            // **其他示例条目**
+            callVCloudSettings_put(current_pkg_name + ".appsflyerKey", "example-key", context);
+            callVCloudSettings_put(current_pkg_name + ".appUserId", "test-user-id", context);
+            callVCloudSettings_put(current_pkg_name + ".disk", "128GB", context);
+            callVCloudSettings_put(current_pkg_name + ".operator", "Fake Operator", context);
+
 
             // **gaid** (Google 广告 ID)
             try {
