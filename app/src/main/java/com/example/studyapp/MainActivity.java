@@ -11,6 +11,8 @@ import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -30,13 +32,21 @@ import com.example.studyapp.device.ChangeDeviceInfoUtil;
 
 import com.example.studyapp.utils.ClashUtil;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
 
   private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
 
   private static final int ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE = 1001;
+
+  private ExecutorService executorService;
 
   // 假设我们从配置文件中提取出了以下 name 项数据（仅为部分示例数据）
   private final String[] proxyNames = {
@@ -55,12 +65,25 @@ public class MainActivity extends AppCompatActivity {
       "ge", "ps"
   };
 
+  // 初始化 ExecutorService
+  private void initializeExecutorService() {
+    if (executorService == null || executorService.isShutdown()) {
+      executorService = new ThreadPoolExecutor(
+          1,  // 核心线程数
+          1,  // 最大线程数
+          0L, TimeUnit.MILLISECONDS,
+          new LinkedBlockingQueue<>(50), // 阻塞队列
+          new ThreadPoolExecutor.AbortPolicy() // 拒绝策略
+      );
+    }
+  }
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    initializeExecutorService();
     System.setProperty("java.library.path", this.getApplicationInfo().nativeLibraryDir);
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       // 针对 Android 10 或更低版本检查普通存储权限
@@ -123,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button modifyDeviceInfoButton = findViewById(R.id.modifyDeviceInfoButton);
     if (modifyDeviceInfoButton != null) {
-      modifyDeviceInfoButton.setOnClickListener(v -> ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(),this));
+      modifyDeviceInfoButton.setOnClickListener(v -> ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this));
     } else {
       Toast.makeText(this, "modifyDeviceInfo button not found", Toast.LENGTH_SHORT).show();
     }
@@ -135,47 +158,117 @@ public class MainActivity extends AppCompatActivity {
       Toast.makeText(this, "resetDeviceInfo button not found", Toast.LENGTH_SHORT).show();
     }
 
+    // 初始化 ChangeDeviceInfoUtil
+    ChangeDeviceInfoUtil.initialize("US", 2);
     // 获取输入框和按钮
     EditText inputNumber = findViewById(R.id.input_number);
     Button executeButton = findViewById(R.id.execute_button);
+    Button stopExecuteButton = findViewById(R.id.stop_execute_button);
 
     // 设置按钮的点击事件
-    executeButton.setOnClickListener(v -> executeLogic(inputNumber) );
+    if (inputNumber != null && executeButton != null) {
+      executeButton.setOnClickListener(v -> {
+        executeButton.setEnabled(false);
+        Toast.makeText(this, "任务正在执行", Toast.LENGTH_SHORT).show();
+        executeLogic(inputNumber);
+      });
+    }
+    if (stopExecuteButton != null) {
+      stopExecuteButton.setOnClickListener(v -> {
+        if (executorService != null && !executorService.isShutdown()) {
+          executorService.shutdownNow();
+          ClashUtil.stopProxy(this);
+          AutoJsUtil.stopAutojsScript(this);
+          executeButton.setEnabled(true);
+        }
+      });
+    } else {
+      Toast.makeText(this, "Stop button not found", Toast.LENGTH_SHORT).show();
+    }
   }
 
-  // 提取的独立方法
   private void executeLogic(EditText inputNumber) {
-    String numberText = inputNumber.getText().toString(); // 获取输入框内容
+    Log.i("MainActivity", "executeLogic: Start execution");
 
-    if (numberText.isEmpty()) {
+    if (inputNumber == null) {
+      Log.e("MainActivity", "executeLogic: Input box is null!");
+      Toast.makeText(this, "输入框为空", Toast.LENGTH_SHORT).show();
+      return;
+    }
+
+    String numberText = inputNumber.getText().toString().trim();
+    if (TextUtils.isEmpty(numberText)) {
+      Log.e("MainActivity", "executeLogic: No number input provided!");
       Toast.makeText(this, "请输入一个数字", Toast.LENGTH_SHORT).show();
-      return; // 退出执行
+      return;
     }
 
     int number;
     try {
-      number = Integer.parseInt(numberText); // 将输入内容转换为整数
+      number = Integer.parseInt(numberText);
+      if (number < 1 || number > 1000) {
+        Log.e("MainActivity", "executeLogic: Invalid number range: " + number);
+        Toast.makeText(this, "请输入 1 到 1000 之间的数字", Toast.LENGTH_SHORT).show();
+        return;
+      }
     } catch (NumberFormatException e) {
+      Log.e("MainActivity", "executeLogic: Invalid number format: " + numberText, e);
       Toast.makeText(this, "请输入有效的数字", Toast.LENGTH_SHORT).show();
-      return; // 输入无效的退出
+      return;
     }
 
-    // 循环执行逻辑代码
-    for (int i = 0; i < number; i++) {
-      // 假设这里是您需要选中的代码逻辑
-      try {
-        if (!ClashUtil.checkProxy(this)) {
-          startProxyVpn(this);
-        } else {
-          ClashUtil.switchProxyGroup("GLOBAL", proxyNames[i], "http://127.0.0.1:6170");
-        }
-        ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
-        AutoJsUtil.runAutojsScript(this);
-        Toast.makeText(this, "第 " + (i + 1) + " 次执行完成", Toast.LENGTH_SHORT).show();
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
+    if (number > proxyNames.length) {
+      Log.e("MainActivity", "executeLogic: Number exceeds proxyNames length: " + number);
+      Toast.makeText(this, "输入的数字超出代理名称范围", Toast.LENGTH_SHORT).show();
+      return;
     }
+
+    if (!isNetworkAvailable(this)) {
+      Log.e("MainActivity", "executeLogic: Network is not available!");
+      Toast.makeText(this, "网络不可用，请检查网络连接", Toast.LENGTH_SHORT).show();
+      return;
+    }
+
+    Log.i("MainActivity", "executeLogic: Submitting job to executor");
+    long startTime = System.currentTimeMillis(); // 开始计时
+
+    initializeExecutorService();
+    executorService.submit(() -> {
+      try {
+        for (int i = 0; i < number; i++) {
+          executeSingleLogic(i);
+        }
+      } catch (Exception e) {
+        Log.e("MainActivity", "executeLogic: Unexpected task error.", e);
+      }
+    });
+  }
+
+  private void executeSingleLogic(int i) {
+    Log.i("MainActivity", "executeSingleLogic: Start execution for index " + i);
+    long startTime = System.currentTimeMillis(); // 开始计时
+
+    Log.i("MainActivity", "executeSingleLogic: Proxy not active, starting VPN");
+    startProxyVpn(this);
+
+    Log.i("MainActivity", "executeSingleLogic: Switching proxy group to " + proxyNames[i]);
+    try {
+      ClashUtil.switchProxyGroup("GLOBAL", proxyNames[i], "http://127.0.0.1:6170");
+    } catch (Exception e) {
+      Log.e("MainActivity", "executeSingleLogic: Failed to switch proxy group", e);
+      runOnUiThread(() -> Toast.makeText(this, "切换代理组失败：" + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    Log.i("MainActivity", "executeSingleLogic: Changing device info");
+    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
+
+    Log.i("MainActivity", "executeSingleLogic: Running AutoJs script");
+    AutoJsUtil.runAutojsScript(this);
+
+    runOnUiThread(() -> Toast.makeText(this, "第 " + (i + 1) + " 次执行完成", Toast.LENGTH_SHORT).show());
+
+    long endTime = System.currentTimeMillis(); // 结束计时
+    Log.i("MainActivity", "executeSingleLogic: Finished execution for index " + i + " in " + (endTime - startTime) + " ms");
   }
 
 
@@ -189,7 +282,6 @@ public class MainActivity extends AppCompatActivity {
       Toast.makeText(context, "Context must be an Activity", Toast.LENGTH_SHORT).show();
       return;
     }
-    Activity activity = (Activity) context;
 
     try {
       ClashUtil.startProxy(context); // 在主线程中调用
@@ -254,6 +346,9 @@ public class MainActivity extends AppCompatActivity {
     super.onDestroy();
     if (AutoJsUtil.scriptResultReceiver != null) {
       unregisterReceiver(AutoJsUtil.scriptResultReceiver);
+    }
+    if (executorService != null) {
+      executorService.shutdown(); // 关闭线程池
     }
   }
 

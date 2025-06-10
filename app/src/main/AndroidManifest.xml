@@ -19,6 +19,8 @@
 <uses-permission android:name="android.permission.MANAGE_USERS" />
 <uses-permission android:name="android.permission.CREATE_USERS" />
 <uses-permission android:name="android.permission.QUERY_USERS" />
+<uses-permission android:name="android.permission.READ_CLIPBOARD_IN_BACKGROUND" />
+
 
     <application
         android:allowBackup="true"
@@ -64,5 +66,7 @@
               android:resource="@xml/accessibility_service_config" />
         </service>
     </application>
-
+    <queries>
+        <package android:name="org.autojs.autojs6" />
+    </queries>
 </manifest>

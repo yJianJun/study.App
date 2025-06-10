@@ -52,10 +52,16 @@ public class ClashUtil {
     }
   };
 
-  public static boolean checkProxy(Context context) throws InterruptedException {
+  public static boolean checkProxy(Context context) {
     CountDownLatch latch = new CountDownLatch(1);
-    checkClashStatus(context, latch);
-    latch.await(); // 等待广播接收器更新状态
+    try {
+      checkClashStatus(context, latch);
+      latch.await(); // 等待广播接收器更新状态
+    } catch (InterruptedException e) {
+      Log.e("ClashUtil", "checkProxy: Waiting interrupted", e);
+      Thread.currentThread().interrupt(); // 重新设置中断状态
+      return false; // 返回默认状态或尝试重试
+    }
     return isRunning;
   }
 

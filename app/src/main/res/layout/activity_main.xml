@@ -4,7 +4,6 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent"
   android:padding="16dp"
-  android:background="@drawable/background"
   tools:context=".MainActivity">
 
     <LinearLayout
@@ -87,7 +86,13 @@
           android:id="@+id/execute_button"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:text="执行代码"
+          android:text="一键执行"
+          android:layout_gravity="center" />
+        <Button
+          android:id="@+id/stop_execute_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="停止执行"
           android:layout_gravity="center" />
     </LinearLayout>
 

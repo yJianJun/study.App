@@ -1,11 +1,17 @@
 package com.example.studyapp.autoJS;
 
+import static androidx.core.content.ContextCompat.startActivity;
+
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
@@ -27,37 +33,56 @@ public class AutoJsUtil {
     public static BroadcastReceiver scriptResultReceiver;
 
     public static void runAutojsScript(Context context) {
-        // 定义脚本文件路径
-        File scriptFile = new File(Environment.getExternalStorageDirectory(), "脚本/chromium.js");
-
-        // 检查文件是否存在
+        // 检查脚本文件
+        File scriptFile = new File(Environment.getExternalStorageDirectory(), "autojs/chromium.js");
         if (!scriptFile.exists()) {
-            Toast.makeText(context, "Script file not found: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+            runOnUiThread(() -> Toast.makeText(context, "Script file not found: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
             return;
         }
 
-        // 检查 Auto.js 应用是否安装
-        if (!isAppInstalled("org.autojs.autojs6",context.getPackageManager())) {
-            Toast.makeText(context, "Auto.js app not installed", Toast.LENGTH_SHORT).show();
+        // 检查是否安装 Auto.js
+        if (!isAppInstalled("org.autojs.autojs6", context.getPackageManager())) {
+            runOnUiThread(() -> Toast.makeText(context, "Auto.js app not installed", Toast.LENGTH_SHORT).show());
             return;
         }
 
-        // 准备启动 Auto.js 的 Intent
+        // 开始运行脚本
         Intent intent = new Intent();
         intent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.RunIntentActivity");
-        intent.putExtra("path", scriptFile.getAbsolutePath()); // 传递脚本路径
+        intent.putExtra("path", scriptFile.getAbsolutePath());
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        // 启动 Auto.js
         try {
-            // 模拟：通过广播监听脚本运行结果
-            registerScriptResultReceiver(context); // 注册结果回调监听（假设脚本通过广播返回结果）
             context.startActivity(intent);
-            Toast.makeText(context, "Running script: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+            runOnUiThread(() -> Toast.makeText(context, "Running script: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(context, "Failed to run script", Toast.LENGTH_SHORT).show();
+            runOnUiThread(() -> Toast.makeText(context, "Failed to run script", Toast.LENGTH_SHORT).show());
         }
+    }
+
+    public static void stopAutojsScript(Context context) {
+        // 停止运行脚本
+        Intent stopIntent = new Intent();
+        stopIntent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity");
+        stopIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // 设置任务栈优先级
+
+
+        try {
+            context.startActivity(stopIntent); // 发送停止脚本的 Intent
+            Toast.makeText(context, "脚本停止管理已发送", Toast.LENGTH_SHORT).show();
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(context, "目标活动未找到：请确认 AutoJs 配置", Toast.LENGTH_LONG).show();
+            Log.e("AutoJsUtil", "ActivityNotFoundException: 请确保目标应用的包名和活动名正确 (org.autojs.autojs6).", e);
+        } catch (Exception e) {
+            Toast.makeText(context, "无法发送停止命令，请检查 AutoJs 配置", Toast.LENGTH_SHORT).show();
+            Log.e("AutoJsUtil", "Error occurred when trying to stop AutoJs script", e);
+        }
+    }
+
+    // 在主线程运行
+    private static void runOnUiThread(Runnable action) {
+        new Handler(Looper.getMainLooper()).post(action);
     }
 
     // 检查目标应用是否安装

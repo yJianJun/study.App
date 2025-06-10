@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -257,13 +258,22 @@ public class ShellUtils {
                 os.flush();
             }
 
-            // 等待子进程完成
-            process.waitFor();
+            try {
+                // 执行命令、等待解决
+                process.waitFor();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // 恢复中断
+                Log.e("ShellUtils", "Error executing commands", e);
+            }
+
 
             // 等待子线程完成
             stdThread.join();
             errThread.join();
 
+        } catch (InterruptedIOException e) {
+            Log.e("ShellUtils", "Error reading stdout: Interrupted", e);
+            Thread.currentThread().interrupt(); // 恢复线程的中断状态
         } catch (Exception e) {
             Log.e("ShellUtils", "Error executing commands", e);
         } finally {
