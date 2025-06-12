@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
     // 初始化按钮
     Button runScriptButton = findViewById(R.id.run_script_button);
     if (runScriptButton != null) {
-      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
+      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this,""));
     } else {
       Toast.makeText(this, "Button not found", Toast.LENGTH_SHORT).show();
     }
@@ -253,17 +253,17 @@ public class MainActivity extends AppCompatActivity {
 
     Log.i("MainActivity", "executeSingleLogic: Switching proxy group to " + proxyNames[i]);
     try {
-      ClashUtil.switchProxyGroup("GLOBAL", proxyNames[i], "http://127.0.0.1:6170");
+      ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
     } catch (Exception e) {
       Log.e("MainActivity", "executeSingleLogic: Failed to switch proxy group", e);
       runOnUiThread(() -> Toast.makeText(this, "切换代理组失败：" + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     Log.i("MainActivity", "executeSingleLogic: Changing device info");
-    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
+    String url = ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
 
     Log.i("MainActivity", "executeSingleLogic: Running AutoJs script");
-    AutoJsUtil.runAutojsScript(this);
+    AutoJsUtil.runAutojsScript(this, url);
 
     runOnUiThread(() -> Toast.makeText(this, "第 " + (i + 1) + " 次执行完成", Toast.LENGTH_SHORT).show());
 

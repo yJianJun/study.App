@@ -32,9 +32,9 @@ public class AutoJsUtil {
 
     public static BroadcastReceiver scriptResultReceiver;
 
-    public static void runAutojsScript(Context context) {
+    public static void runAutojsScript(Context context,String url) {
         // 检查脚本文件
-        File scriptFile = new File(Environment.getExternalStorageDirectory(), "autojs/chromium.js");
+        File scriptFile = new File(Environment.getExternalStorageDirectory(), "script/main.js");
         if (!scriptFile.exists()) {
             runOnUiThread(() -> Toast.makeText(context, "Script file not found: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
             return;
@@ -50,6 +50,7 @@ public class AutoJsUtil {
         Intent intent = new Intent();
         intent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.RunIntentActivity");
         intent.putExtra("path", scriptFile.getAbsolutePath());
+        intent.putExtra("url",url);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         try {
@@ -65,19 +66,28 @@ public class AutoJsUtil {
         // 停止运行脚本
         Intent stopIntent = new Intent();
         stopIntent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity");
-        stopIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // 设置任务栈优先级
+        stopIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
-
-        try {
-            context.startActivity(stopIntent); // 发送停止脚本的 Intent
-            Toast.makeText(context, "脚本停止管理已发送", Toast.LENGTH_SHORT).show();
-        } catch (ActivityNotFoundException e) {
+        // 检查目标活动是否存在
+        if (isActivityAvailable(context, "org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity")) {
+            try {
+                context.startActivity(stopIntent); // 发送停止脚本的 Intent
+                Toast.makeText(context, "脚本停止管理已发送", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(context, "无法发送停止命令，请检查 AutoJs 配置", Toast.LENGTH_SHORT).show();
+                Log.e("AutoJsUtil", "Error occurred when trying to stop AutoJs script", e);
+            }
+        } else {
             Toast.makeText(context, "目标活动未找到：请确认 AutoJs 配置", Toast.LENGTH_LONG).show();
-            Log.e("AutoJsUtil", "ActivityNotFoundException: 请确保目标应用的包名和活动名正确 (org.autojs.autojs6).", e);
-        } catch (Exception e) {
-            Toast.makeText(context, "无法发送停止命令，请检查 AutoJs 配置", Toast.LENGTH_SHORT).show();
-            Log.e("AutoJsUtil", "Error occurred when trying to stop AutoJs script", e);
+            Log.e("AutoJsUtil", "Activity not found: org.autojs.autojs.external.open.StopServiceActivity");
         }
+    }
+
+    private static boolean isActivityAvailable(Context context, String packageName, String className) {
+        Intent intent = new Intent();
+        intent.setClassName(packageName, className);
+        PackageManager pm = context.getPackageManager();
+        return pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null;
     }
 
     // 在主线程运行
