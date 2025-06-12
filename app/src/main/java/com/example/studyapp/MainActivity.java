@@ -2,6 +2,7 @@ package com.example.studyapp;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.net.Uri;
 import android.content.Context;
 import android.content.Intent;
@@ -32,6 +33,7 @@ import com.example.studyapp.device.ChangeDeviceInfoUtil;
 
 import com.example.studyapp.utils.ClashUtil;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -42,11 +44,13 @@ import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
 
+  private static WeakReference<MainActivity> instance;
+
   private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
 
   private static final int ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE = 1001;
 
-  private ExecutorService executorService;
+  public ExecutorService executorService;
 
   // 假设我们从配置文件中提取出了以下 name 项数据（仅为部分示例数据）
   private final String[] proxyNames = {
@@ -82,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+    instance = new WeakReference<>(this);
 
     initializeExecutorService();
     System.setProperty("java.library.path", this.getApplicationInfo().nativeLibraryDir);
@@ -217,12 +222,6 @@ public class MainActivity extends AppCompatActivity {
       return;
     }
 
-    if (number > proxyNames.length) {
-      Log.e("MainActivity", "executeLogic: Number exceeds proxyNames length: " + number);
-      Toast.makeText(this, "输入的数字超出代理名称范围", Toast.LENGTH_SHORT).show();
-      return;
-    }
-
     if (!isNetworkAvailable(this)) {
       Log.e("MainActivity", "executeLogic: Network is not available!");
       Toast.makeText(this, "网络不可用，请检查网络连接", Toast.LENGTH_SHORT).show();
@@ -230,21 +229,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     Log.i("MainActivity", "executeLogic: Submitting job to executor");
-    long startTime = System.currentTimeMillis(); // 开始计时
-
     initializeExecutorService();
     executorService.submit(() -> {
       try {
+        AutoJsUtil.flag = true;
         for (int i = 0; i < number; i++) {
-          executeSingleLogic(i);
+          synchronized (lock) {
+            // 等待 flag 设置为 false 时暂停
+            while (!AutoJsUtil.flag) {
+              lock.wait(); // 当前线程进入等待状态
+            }
+            // 执行实际逻辑
+            executeSingleLogic(i);
+          }
         }
+      } catch (InterruptedException e) {
+        Log.e("MainActivity", "executeLogic: Thread interrupted while waiting", e);
       } catch (Exception e) {
         Log.e("MainActivity", "executeLogic: Unexpected task error.", e);
       }
     });
   }
 
-  private void executeSingleLogic(int i) {
+  public final static Object lock = new Object();
+
+  public void executeSingleLogic(int i) {
     Log.i("MainActivity", "executeSingleLogic: Start execution for index " + i);
     long startTime = System.currentTimeMillis(); // 开始计时
 
@@ -344,12 +353,17 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onDestroy() {
     super.onDestroy();
+    instance.clear();
     if (AutoJsUtil.scriptResultReceiver != null) {
       unregisterReceiver(AutoJsUtil.scriptResultReceiver);
     }
     if (executorService != null) {
       executorService.shutdown(); // 关闭线程池
     }
+  }
+
+  public static MainActivity getInstance() {
+    return instance.get(); // 返回实例
   }
 
   private boolean isNetworkAvailable(Context context) {

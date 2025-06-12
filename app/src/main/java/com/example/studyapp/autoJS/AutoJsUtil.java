@@ -2,12 +2,14 @@ package com.example.studyapp.autoJS;
 
 import static androidx.core.content.ContextCompat.startActivity;
 
+import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,12 +33,14 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class AutoJsUtil {
 
     public static BroadcastReceiver scriptResultReceiver;
+    public static volatile boolean flag;
 
     public static void runAutojsScript(Context context,String url) {
         // 检查脚本文件
         File scriptFile = new File(Environment.getExternalStorageDirectory(), "script/main.js");
         if (!scriptFile.exists()) {
-            runOnUiThread(() -> Toast.makeText(context, "Script file not found: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(context, "脚本文件未找到: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
+            Log.e("AutoJsUtil", "脚本文件未找到, 路径: " + scriptFile.getAbsolutePath());
             return;
         }
 
@@ -46,40 +50,51 @@ public class AutoJsUtil {
             return;
         }
 
-        // 开始运行脚本
+        // 启动 AutoJs
         Intent intent = new Intent();
         intent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.RunIntentActivity");
         intent.putExtra("path", scriptFile.getAbsolutePath());
-        intent.putExtra("url",url);
+        intent.putExtra("url", url);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
         try {
+            registerScriptResultReceiver(context);
             context.startActivity(intent);
-            runOnUiThread(() -> Toast.makeText(context, "Running script: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
+            Log.i("AutoJsUtil", "脚本运行中：" + scriptFile.getAbsolutePath());
         } catch (Exception e) {
-            e.printStackTrace();
-            runOnUiThread(() -> Toast.makeText(context, "Failed to run script", Toast.LENGTH_SHORT).show());
+            Log.e("AutoJsUtil", "运行脚本失败", e);
+            runOnUiThread(() -> Toast.makeText(context, "运行脚本失败: " + e.getMessage(), Toast.LENGTH_SHORT).show());
         }
+        // 注意：unregisterScriptResultReceiver 不应到此时立即调用
     }
 
-    public static void stopAutojsScript(Context context) {
-        // 停止运行脚本
-        Intent stopIntent = new Intent();
-        stopIntent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity");
-        stopIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
-        // 检查目标活动是否存在
-        if (isActivityAvailable(context, "org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity")) {
-            try {
-                context.startActivity(stopIntent); // 发送停止脚本的 Intent
-                Toast.makeText(context, "脚本停止管理已发送", Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                Toast.makeText(context, "无法发送停止命令，请检查 AutoJs 配置", Toast.LENGTH_SHORT).show();
-                Log.e("AutoJsUtil", "Error occurred when trying to stop AutoJs script", e);
+    public static void registerScriptResultReceiver(Context context) {
+        // 使用锁进行控制
+        synchronized (MainActivity.lock) {
+            if (scriptResultReceiver == null) {
+                // 创建广播接收器
+                scriptResultReceiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String scriptResult = intent.getStringExtra("result");
+                        if (scriptResult != null && !scriptResult.isEmpty()) {
+                            Log.d("MainActivity", "Script result received");
+                            synchronized (MainActivity.lock){
+                                flag = true;
+                                MainActivity.lock.notifyAll();
+                            }
+                        }
+                    }
+                };
+                // 注册广播接收器
+                try {
+                    IntentFilter filter = new IntentFilter(AUTOJS_SCRIPT_FINISHED_ACTION);
+                    Context appContext = context.getApplicationContext();
+                    ContextCompat.registerReceiver(appContext, scriptResultReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+                    flag = false;
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Failed to register receiver", e);
+                }
             }
-        } else {
-            Toast.makeText(context, "目标活动未找到：请确认 AutoJs 配置", Toast.LENGTH_LONG).show();
-            Log.e("AutoJsUtil", "Activity not found: org.autojs.autojs.external.open.StopServiceActivity");
         }
     }
 
@@ -105,62 +120,42 @@ public class AutoJsUtil {
         }
     }
 
-    public static void registerScriptResultReceiver(Context context) {
-        // 创建广播接收器
-        scriptResultReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                // 获取脚本运行结果（假设结果通过 "result" 键返回）
-                String scriptResult = intent.getStringExtra("result");
-                if (scriptResult != null && !scriptResult.isEmpty()) {
-                    // 处理结果并发送给服务端
-                    sendResultToServer(scriptResult,context);
-                }
+    private static final String AUTOJS_SCRIPT_FINISHED_ACTION = "org.autojs.SCRIPT_FINISHED";
+    private static final String SCRIPT_RESULT_KEY = "result";
+    private static final Object lock = new Object();
+
+
+    public static void unregisterScriptResultReceiver(Context context) {
+        synchronized (lock) {
+            if (scriptResultReceiver != null) {
+                context.getApplicationContext().unregisterReceiver(scriptResultReceiver);
+                scriptResultReceiver = null;
             }
-        };
-
-        // 注册接收器（假设 Auto.js 广播动作为 "org.autojs.SCRIPT_FINISHED"）
-        IntentFilter filter = new IntentFilter("org.autojs.SCRIPT_FINISHED");
-
-        // 使用 ContextCompat.registerReceiver 注册，并设置为 RECEIVER_EXPORTED
-        ContextCompat.registerReceiver(
-                context, // 当前上下文
-                scriptResultReceiver, // 自定义的 BroadcastReceiver
-                filter, // IntentFilter
-                ContextCompat.RECEIVER_EXPORTED // 设置为非导出广播接收器
-        );
+        }
     }
 
-    public static void sendResultToServer(String scriptResult,Context context) {
-        // 使用 Retrofit 或 HttpURLConnection 实现服务端 API 调用
-        Toast.makeText(context, "Sending result to server: " + scriptResult, Toast.LENGTH_SHORT).show();
+    public static void stopAutojsScript(Context context) {
+        // 停止运行脚本的 Intent
+        Intent stopIntent = new Intent();
+        stopIntent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity");
+        stopIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
-        // 示例：用 Retrofit 设置服务端请求
-        // 创建 Retrofit 的实例
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://your-server-url.com/") // 替换为服务端 API 地址
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        // 检查目标活动是否存在
+        boolean activityAvailable = isActivityAvailable(context, "org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity");
+        Log.d("AutoJsUtil", "是否找到目标活动: " + activityAvailable);
 
-        // 定义 API 接口
-        CloudPhoneManageService api = retrofit.create(CloudPhoneManageService.class);
-
-        // 构建请求体并发送请求
-        Call<Void> call = api.sendScriptResult(new ScriptResultRequest(scriptResult)); // 假设参数是 com.example.studyapp.request.ScriptResultRequest 对象
-        call.enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(context, "Result sent successfully", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(context, "Failed to send result: " + response.code(), Toast.LENGTH_SHORT).show();
-                }
+        if (activityAvailable) {
+            try {
+                context.startActivity(stopIntent); // 尝试发送停止脚本的 Intent
+                Toast.makeText(context, "脚本停止命令已发送", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(context, "无法发送停止命令，请检查 AutoJs 配置", Toast.LENGTH_SHORT).show();
+                Log.e("AutoJsUtil", "发送停止命令时发生错误", e);
             }
-
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                    Toast.makeText(context, "Error sending result: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+        } else {
+            Toast.makeText(context, "目标活动未找到或已更改，请检查 AutoJs 配置", Toast.LENGTH_LONG).show();
+            Log.e("AutoJsUtil", "目标活动未找到: org.autojs.autojs.external.open.StopServiceActivity");
+        }
     }
+
 }
