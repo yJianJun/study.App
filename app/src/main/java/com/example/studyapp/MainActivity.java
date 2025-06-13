@@ -232,14 +232,17 @@ public class MainActivity extends AppCompatActivity {
     initializeExecutorService();
     executorService.submit(() -> {
       try {
-        AutoJsUtil.flag = true;
+        AutoJsUtil.registerScriptResultReceiver(this);
+        synchronized (broadcastLock) {
+          AutoJsUtil.flag = true; // 广播状态更新
+        }
+
         for (int i = 0; i < number; i++) {
-          synchronized (lock) {
-            // 等待 flag 设置为 false 时暂停
+          synchronized (taskLock) {
             while (!AutoJsUtil.flag) {
-              lock.wait(); // 当前线程进入等待状态
+              taskLock.wait(30000);
             }
-            // 执行实际逻辑
+            Log.d("MainActivity", "任务执行第：" + i);
             executeSingleLogic(i);
           }
         }
@@ -251,7 +254,8 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
-  public final static Object lock = new Object();
+  public static final Object broadcastLock = new Object(); // 广播锁
+  public static final Object taskLock = new Object();      // 任务逻辑锁
 
   public void executeSingleLogic(int i) {
     Log.i("MainActivity", "executeSingleLogic: Start execution for index " + i);
@@ -279,7 +283,6 @@ public class MainActivity extends AppCompatActivity {
     long endTime = System.currentTimeMillis(); // 结束计时
     Log.i("MainActivity", "executeSingleLogic: Finished execution for index " + i + " in " + (endTime - startTime) + " ms");
   }
-
 
   private void startProxyVpn(Context context) {
     if (!isNetworkAvailable(context)) {

@@ -1,6 +1,8 @@
 package com.example.studyapp.autoJS;
 
 import static androidx.core.content.ContextCompat.startActivity;
+import static com.example.studyapp.MainActivity.broadcastLock;
+import static com.example.studyapp.MainActivity.taskLock;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
@@ -35,8 +37,10 @@ public class AutoJsUtil {
     public static BroadcastReceiver scriptResultReceiver;
     public static volatile boolean flag;
 
+    private static int count;
     public static void runAutojsScript(Context context,String url) {
         // 检查脚本文件
+        Log.i("AutoJsUtil", "-------脚本运行开始：--------"+ count++ );
         File scriptFile = new File(Environment.getExternalStorageDirectory(), "script/main.js");
         if (!scriptFile.exists()) {
             runOnUiThread(() -> Toast.makeText(context, "脚本文件未找到: " + scriptFile.getAbsolutePath(), Toast.LENGTH_SHORT).show());
@@ -57,8 +61,8 @@ public class AutoJsUtil {
         intent.putExtra("url", url);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
-            registerScriptResultReceiver(context);
             context.startActivity(intent);
+            flag = false;
             Log.i("AutoJsUtil", "脚本运行中：" + scriptFile.getAbsolutePath());
         } catch (Exception e) {
             Log.e("AutoJsUtil", "运行脚本失败", e);
@@ -68,34 +72,38 @@ public class AutoJsUtil {
     }
 
     public static void registerScriptResultReceiver(Context context) {
-        // 使用锁进行控制
-        synchronized (MainActivity.lock) {
+
             if (scriptResultReceiver == null) {
                 // 创建广播接收器
                 scriptResultReceiver = new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        String scriptResult = intent.getStringExtra("result");
+                        Log.d("MainActivity", "----脚本运行结束通知一次------; 当前线程：" + Thread.currentThread().getName());
+                        String scriptResult = intent.getStringExtra(SCRIPT_RESULT_KEY);
                         if (scriptResult != null && !scriptResult.isEmpty()) {
-                            Log.d("MainActivity", "Script result received");
-                            synchronized (MainActivity.lock){
-                                flag = true;
-                                MainActivity.lock.notifyAll();
+                            synchronized (broadcastLock) {
+                                AutoJsUtil.flag = true;
+                            }
+                            synchronized (taskLock) {
+                                taskLock.notifyAll(); // 唤醒任务线程
                             }
                         }
                     }
+
                 };
                 // 注册广播接收器
                 try {
                     IntentFilter filter = new IntentFilter(AUTOJS_SCRIPT_FINISHED_ACTION);
                     Context appContext = context.getApplicationContext();
                     ContextCompat.registerReceiver(appContext, scriptResultReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
-                    flag = false;
+                    Log.d("MainActivity", "广播接收器成功注册");
                 } catch (Exception e) {
                     Log.e("MainActivity", "Failed to register receiver", e);
+                    scriptResultReceiver = null; // 确保状态一致
                 }
+            } else {
+                Log.w("MainActivity", "广播接收器已注册，无需重复注册");
             }
-        }
     }
 
     private static boolean isActivityAvailable(Context context, String packageName, String className) {
@@ -125,14 +133,6 @@ public class AutoJsUtil {
     private static final Object lock = new Object();
 
 
-    public static void unregisterScriptResultReceiver(Context context) {
-        synchronized (lock) {
-            if (scriptResultReceiver != null) {
-                context.getApplicationContext().unregisterReceiver(scriptResultReceiver);
-                scriptResultReceiver = null;
-            }
-        }
-    }
 
     public static void stopAutojsScript(Context context) {
         // 停止运行脚本的 Intent

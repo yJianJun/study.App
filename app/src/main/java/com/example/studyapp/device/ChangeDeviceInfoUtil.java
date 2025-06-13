@@ -242,7 +242,6 @@ public class ChangeDeviceInfoUtil {
       String date1 = afDeviceObject.optString(".date1", "");
       String date2 = afDeviceObject.optString(".date2", "");
       String bootId = afDeviceObject.optString("BootId", "");
-
       // 设置机型, 直接设置属性
       ShellUtils.execRootCmd("setprop ro.product.brand " + ro_product_brand);
       ShellUtils.execRootCmd("setprop ro.product.model "+ ro_product_model );
