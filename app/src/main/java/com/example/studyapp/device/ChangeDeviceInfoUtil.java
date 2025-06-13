@@ -6,12 +6,14 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.example.studyapp.utils.HttpUtil;
 import com.example.studyapp.utils.ShellUtils;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
