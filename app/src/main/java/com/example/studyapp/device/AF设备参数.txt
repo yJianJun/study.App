@@ -1,0 +1,116 @@
+key		
+.advertiserId 		"��֤, aid������"
+.advertiserIdEnabled 		ͨ������
+.af_currentstore 	"AppsFlyerProperties ��(Map)getMonetizationNetwork ��ȡapi_store_value,��ȡ����ʱ��AndroidManifest.xml meta-data ��ȡAF_STORE"	δ֪
+.af_events_api 	"getMonetizat.pu(""af_events_api"",""1"");�̶�ֵ"	δ֪
+.af_installstore 	"AppsFlyerProperties ��(Map)getMonetizationNetwork ��ȡchannel,��ȡ����ʱ����Դ�ļ���ȡCHANNEL �ַ�����ֵ"	δ֪
+.af_preinstalled 	"����ApplicationInfo ��flags �ж�app�Ƿ�װ��ϵͳ����,��Ϊtrue,����Ϊflase"	δ֪
+.af_timestamp 	new Date().getTime();��ȡ��ʱ��	δ֪
+.af_v 		δ֪
+.af_v2 		δ֪
+.android_id 	" String string = Settings.Secure.getString(context, ""android_id"");"	"��֤, �޸���ȷ"
+.app_version_code 		app����
+.app_version_name 		app����
+.appsflyerKey 		app����
+.appUserId 		app����
+.batteryLevel ��ŵ�״̬+������Ҫ�ṩ֧��	"context.registerReceiver(null, new IntentFilter(""android.intent.action.BATTERY_CHANGED""));"	"��������, ���豸�Դ������ŵ�"
+.brand 	Build.BRAND	"��֤, �޸���ȷ"
+.carrier 	telephonyManager.getNetworkOperatorName	"��֤, �޸���ȷ"
+.cell.mcc 	context.getResources().getConfiguration().mcc	"��֤, �޸���ȷ"
+.cell.mnc 	context.getResources().getConfiguration().mnc	"��֤, �޸���ȷ"
+.cksm_v1 		δ֪
+.counter Ĭ������		δ֪
+.country 	Locale.getDefault().getCountry()	"ϵͳ������, ��δ��api���ҵ�"
+.date1 	packageInfo2.firstInstallTime	"���ֳ�����, ����hook�ӿ�"
+.date2 	packageInfo2.lastUpdateTime	"���ֳ�����, ����hook�ӿ�"
+.device 	Build.DEVICE	"��֤, �޸���ȷ"
+.deviceData.arch 	"AFInAppEventType(""os.arch"")"	δ����
+.deviceData.btch 	"registerReceiver.getIntExtra(""status"", -1) registerReceiver.getIntExtra(""plugged"", -1), android.intent.action.BATTERY_CHANGED btchȡֵ:no,ac,usb,other,wireless"	"��������, �������г��ģ��"
+.deviceData.btl ȷ�ϳ�ŵ�״̬����󣬵����Ƿ�����״̬ģ��仯	"registerReceiver.getIntExtra(""level"", -1) registerReceiver.getIntExtra(""scale"", -1),  "	�����ֵ��ȷ
+.deviceData.build_display_id 	"AFInAppEventType(""ro.build.display.id"")"	�ɸ�
+.deviceData.cpu_abi 	"AFInAppEventType(""ro.product.cpu.abi"")"	���ɸ���
+.deviceData.cpu_abi2 	"AFInAppEventType(""ro.product.cpu.abi2"")"	���ɸ���
+.deviceData.dim.d_dpi 	displayMetrics = resources.getDisplayMetrics();	"ֻ���ϴ���������ʱ�����ָ��, δ����"
+.deviceData.dim.size 	resources.getConfiguration().screenLayout & 15)	"ֻ���ϴ���������ʱ�����ָ��, δ����"
+.deviceData.dim.x_px 	��	"ֻ���ϴ���������ʱ�����ָ��, δ����"
+.deviceData.dim.xdp 	��	"ֻ���ϴ���������ʱ�����ָ��, δ����"
+.deviceData.dim.y_px 	��	"ֻ���ϴ���������ʱ�����ָ��, δ����"
+.deviceData.dim.ydp 	��	"ֻ���ϴ���������ʱ�����ָ��, δ����"
+.deviceData.sensors.[0].sN 	android.hardware.Sensor.getName()	��������������
+.deviceData.sensors.[0].sT 	android.hardware.Sensor.getType()	��������������
+.deviceData.sensors.[0].sV 	android.hardware.Sensor.getVendor()	��������������
+.deviceData.sensors.[0].sVE.[0] 	SensorEvent sensorEvent.values	��������������
+.deviceData.sensors.[0].sVE.[1] 	SensorEvent sensorEvent.values	��������������
+.deviceData.sensors.[0].sVE.[2] 	SensorEvent sensorEvent.values	��������������
+.deviceType 	Build.TYPE	������
+.disk 	new StatFs(Environment.getDataDirectory().getAbsolutePath()); availableBlocks / pow)).append('/').append((long) (blockCount / pow)	��������
+.exception_number 		δ֪
+.firstLaunchDate 	new Date()	�޿��޸Ľӿ�
+.iaecounter 		δ֪
+.installDate 	"getPackageManager().getPackageInfo(this.valueOf.getPackageName(), 0).firstInstallTime"	��������
+.installer_package 	packageManager.getInstallerPackageName	��������
+.isFirstCall 		δ֪
+.isGaidWithGps ��ȷ��		δ֪
+.ivc 		δ֪
+.kef5e42 		δ֪
+.lang 	Locale.getDefault().getDisplayLanguage()	"��֤, �޸���ȷ"
+.lang_code 	Locale.getDefault().getLanguage()	"��֤, �޸���ȷ"
+.last_boot_time 	System.currentTimeMillis() - SystemClock.elapsedRealtime()	�޲ο�
+.meta.first_launch.init_to_fg 	System.currentTimeMillis()-getCurrencyIso4217Code ����af ��ʼ��ʱ��ֵgetCurrencyIso4217Code=System.currentTimeMillis()��	
+.meta.first_launch.start_with 	ȡֵ application��activity��other	
+.model 	Build.MODEL	
+.network 	"networkCapabilities.hasTransport(1) ? ""WIFI"" : networkCapabilities.hasTransport(0) ? ""MOBILE"" : ""unknown"";"	������
+.onelink_id 		
+.open_referrer �·���hook af api�����ֿ����ԣ�	activity.getReferrer()	��
+.operator 	telephonyManager.getSimOperatorName	
+.p_receipt.an.dbg 	ͨ��(context.getApplicationInfo().flags & 2) != 0;���ж��Ƿ񴦿�ͨ����	
+.p_receipt.an.hk 	"(String) Class.forName(""android.os.SystemProperties"").getMethod(""get"", String.class).invoke(null, str);"	��
+.p_receipt.pr.aa	ro.arch	��������
+.p_receipt.pr.ab	ro.chipname	��������
+.p_receipt.pr.ac	ro.dalvik.vm.native.bridge	Ĭ��Ϊ0
+.p_receipt.pr.ad	persist.sys.nativebridge	Ĭ��Ϊ��
+.p_receipt.pr.ae	ro.enable.native.bridge.exec	Ĭ��Ϊ��
+.p_receipt.pr.af	dalvik.vm.isa.x86.features	Ĭ��Ϊ��
+.p_receipt.pr.ag	dalvik.vm.isa.x86.variant	Ĭ��Ϊ��
+.p_receipt.pr.ah	ro.zygote	"Ĭ��""zygote64_32"""
+.p_receipt.pr.ai	ro.allow.mock.location	Ĭ��Ϊ0
+.p_receipt.pr.aj	ro.dalvik.vm.isa.arm	Ĭ��Ϊ��
+.p_receipt.pr.ak	dalvik.vm.isa.arm.features	"Ĭ��""default"""
+.p_receipt.pr.al	dalvik.vm.isa.arm.variant	"Ĭ��: ""cortex-a76"""
+.p_receipt.pr.am	dalvik.vm.isa.arm64.features	"Ĭ��""default"""
+.p_receipt.pr.an	dalvik.vm.isa.arm64.variant	"Ĭ��: ""cortex-a76"""
+.p_receipt.pr.ao	vzw.os.rooted	Ĭ��Ϊ��
+.p_receipt.pr.ap	ro.build.user	�ɸ���
+.p_receipt.pr.aq	ro.kernel.qemu	δ��ȡ��
+.p_receipt.pr.ar	ro.hardware	"��֤, �ɸ���"
+.p_receipt.pr.as	ro.product.cpu.abi	���ɸ���
+.p_receipt.pr.at	ro.product.cpu.abilist	���ɸ���
+.p_receipt.pr.au	ro.product.cpu.abilist32	���ɸ���
+.p_receipt.pr.av	ro.product.cpu.abilist64	���ɸ���
+.platformextension 		δ֪
+.product 	Build.PRODUCT	�ɸ���
+.referrers.[0].api_ver 	"1.ͨ��context.getPackageManager().getPackageInfo(str, 0); str=com.android.vending ��com.xiaomi.mipicks"	δ֪
+.referrers.[0].api_ver_name 	"1.ͨ��context.getPackageManager().getPackageInfo(str, 0).versionName;str=com.android.vending��com.xiaomi.mipicks"	δ֪
+.referrers.[0].click_ts 	С�׵�����GetAppsReferrerClient.Companion.newBuilder(context).build() ��getReferrerClickTimestampSeconds�������ֻ�����InstallReferrerClient ����getInstallReferrer() ��ȡ��ReferrerDetails �ٵ���getReferrerClickTimestampSeconds	δ֪
+.referrers.[0].google_custom.click_server_ts 	installReferrer.getReferrerClickTimestampServerSeconds()	δ֪
+.referrers.[0].google_custom.install_begin_server_ts 	installReferrer.getInstallBeginTimestampServerSeconds()	δ֪
+.referrers.[0].google_custom.install_version 	installReferrer.getInstallVersion()	δ֪
+.referrers.[0].google_custom.instant 	installReferrer.getGooglePlayInstantParam()	δ֪
+.referrers.[0].install_begin_ts 	installReferrer.getInstallBeginTimestampSeconds()	δ֪
+.referrers.[0].latency 	System.currentTimeMillis() - currentTimeMillis�Ǹ�ʱ���ֵ�����Ļ�û��ϵ	δ֪
+.referrers.[0].referrer 	utm_source=google-play&utm_medium=organic����  	δ֪
+.referrers.[0].response 	OK ����	δ֪
+.referrers.[0].source 	google ����	δ֪
+.referrers.[0].type 	store ����	δ֪
+.registeredUninstall 		δ֪
+.rfr.clk 	installReferrer.getReferrerClickTimestampSeconds()	δ֪
+.rfr.code 	0 ����	δ֪
+.rfr.install 	installReferrer.getInstallBeginTimestampSeconds()	δ֪
+.rfr.instant 	installReferrer.getGooglePlayInstantParam()	δ֪
+.rfr.val 	installReferrer.getInstallReferrer()	δ֪
+.sc_o 	windowManager.getDefaultDisplay().getRotation()	
+.sdk 	Build.VERSION.SDK_INT 	���޸�
+.sig 		
+.timepassedsincelastlaunch 		
+.tokenRefreshConfigured 		
+.uid 		
