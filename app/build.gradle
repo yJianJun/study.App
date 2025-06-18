@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.studyapp"
-        minSdk 24
+        minSdk 23
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -73,4 +73,11 @@ dependencies {
 
     // 如果需要 RxJava 支持（可选）
     implementation 'com.squareup.retrofit2:adapter-rxjava3:2.9.0'
+
+    // 添加 Mockito 核心依赖
+    testImplementation 'org.mockito:mockito-core:5.4.0'
+    
+    // 如果需要在 Android Instrumented Tests 中使用 Mockito
+    androidTestImplementation 'org.mockito:mockito-android:5.4.0'
+
 }

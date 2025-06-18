@@ -3,6 +3,7 @@ package com.example.studyapp.autoJS;
 import static androidx.core.content.ContextCompat.startActivity;
 import static com.example.studyapp.MainActivity.broadcastLock;
 import static com.example.studyapp.MainActivity.taskLock;
+import static com.example.studyapp.task.TaskUtil.infoUpload;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
@@ -26,6 +27,7 @@ import com.example.studyapp.service.CloudPhoneManageService;
 
 import java.io.File;
 
+import java.io.IOException;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -38,7 +40,7 @@ public class AutoJsUtil {
     public static volatile boolean flag;
 
     private static int count;
-    public static void runAutojsScript(Context context,String url) {
+    public static void runAutojsScript(Context context) {
         // 检查脚本文件
         Log.i("AutoJsUtil", "-------脚本运行开始：--------"+ count++ );
         File scriptFile = new File(Environment.getExternalStorageDirectory(), "script/main.js");
@@ -58,7 +60,6 @@ public class AutoJsUtil {
         Intent intent = new Intent();
         intent.setClassName("org.autojs.autojs6", "org.autojs.autojs.external.open.RunIntentActivity");
         intent.putExtra("path", scriptFile.getAbsolutePath());
-        intent.putExtra("url", url);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             context.startActivity(intent);
@@ -85,6 +86,13 @@ public class AutoJsUtil {
                                 AutoJsUtil.flag = true;
                             }
                             synchronized (taskLock) {
+                                try {
+                                    infoUpload(context, MainActivity.androidId, scriptResult);
+                                } catch (IOException e) {
+                                    // 例如：可以显示给用户一条错误消息
+                                    Log.e("AutoJsUtil", "File upload failed: " + e.getMessage());
+                                }
+
                                 taskLock.notifyAll(); // 唤醒任务线程
                             }
                         }
@@ -129,10 +137,7 @@ public class AutoJsUtil {
     }
 
     private static final String AUTOJS_SCRIPT_FINISHED_ACTION = "org.autojs.SCRIPT_FINISHED";
-    private static final String SCRIPT_RESULT_KEY = "result";
-    private static final Object lock = new Object();
-
-
+    private static final String SCRIPT_RESULT_KEY = "package";
 
     public static void stopAutojsScript(Context context) {
         // 停止运行脚本的 Intent
@@ -157,5 +162,4 @@ public class AutoJsUtil {
             Log.e("AutoJsUtil", "目标活动未找到: org.autojs.autojs.external.open.StopServiceActivity");
         }
     }
-
 }

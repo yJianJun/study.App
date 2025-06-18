@@ -1,0 +1,63 @@
+{
+    "cpuClockSpeed": "cpu_clock_speed_value",
+    "gaid": "gaid_value",
+    "userAgent": "User-Agent_value",
+    "osLang": "os_lang_value",
+    "osVer": "os_ver_value",
+    "tz": "tz_value",
+    "systemCountry": "system_country_value",
+    "simCountry": "sim_country_value",
+    "romFreeIn": "rom_free_in_value",
+    "resolution": "resolution_value",
+    "vendor": "vendor_value",
+    "batteryScale": "bat_scale_value",
+    "net": "net_value",
+    "dpi": "dpi_value",
+    "romFreeExt": "rom_free_ext_value",
+    "dpiF": "dpi_f_value",
+    "cpuCoreNum": "cpu_core_num_value",
+  "afDeviceObject": {
+    "advertiserId": "advertiserId_value",
+    "model": "model_value",
+    "brand": "brand_value",
+    "androidId": "android_id_value",
+    "xPixels": "x_px_value",
+    "yPixels": "y_px_value",
+    "densityDpi": "density_dpi_value",
+    "country": "country_value",
+    "batteryLevel": "batteryLevel_value",
+    "stackInfo": "stack_info_value",
+    "product": "product_value",
+    "network": "network_value",
+    "langCode": "lang_code_value",
+    "cpuAbi": "cpu_abi_value",
+    "yDp": "ydp_value",
+    "lang": "lang_value",
+    "roProductDetails": {
+      "brand": "ro_product_brand_value",
+      "model": "ro_product_model_value",
+      "manufacturer": "ro_product_manufacturer_value",
+      "device": "ro_product_device_value",
+      "name": "ro_product_name_value"
+    },
+    "roBuildDetails": {
+      "versionIncremental": "ro_build_version_incremental_value",
+      "fingerprint": "ro_build_fingerprint_value",
+      "productBuildFingerprint": "ro_product_build_fingerprint_value",
+      "systemBuildFingerprint": "ro_system_build_fingerprint_value",
+      "systemExtBuildFingerprint": "ro_system_ext_build_fingerprint_value",
+      "vendorBuildFingerprint": "ro_vendor_build_fingerprint_value"
+    },
+    "cloudProperties": {
+      "gpuProperties": {
+        "glVendor": "persist_sys_cloud_gpu_gl_vendor_value",
+        "glRenderer": "persist_sys_cloud_gpu_gl_renderer_value",
+        "glVersion": "persist_sys_cloud_gpu_gl_version_value",
+        "eglVendor": "persist_sys_cloud_gpu_egl_vendor_value",
+        "eglVersion": "persist_sys_cloud_gpu_egl_version_value"
+      },
+      "drmId": "persist_sys_cloud_drm_id_value",
+      "batteryCapacity": "persist_sys_cloud_battery_capacity_value"
+    }
+  }
+}

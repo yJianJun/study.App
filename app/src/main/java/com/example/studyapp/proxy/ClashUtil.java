@@ -1,4 +1,4 @@
-package com.example.studyapp.utils;
+package com.example.studyapp.proxy;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;

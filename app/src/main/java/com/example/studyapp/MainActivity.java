@@ -2,7 +2,6 @@ package com.example.studyapp;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.net.Uri;
 import android.content.Context;
 import android.content.Intent;
@@ -31,16 +30,15 @@ import androidx.work.WorkManager;
 import com.example.studyapp.autoJS.AutoJsUtil;
 import com.example.studyapp.device.ChangeDeviceInfoUtil;
 
-import com.example.studyapp.utils.ClashUtil;
+import com.example.studyapp.proxy.ClashUtil;
+import com.example.studyapp.service.MyAccessibilityService;
+import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -69,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
       "ge", "ps"
   };
 
+  public static String androidId;
+
   // 初始化 ExecutorService
   private void initializeExecutorService() {
     if (executorService == null || executorService.isShutdown()) {
@@ -82,6 +82,30 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
+  /**
+   * 获取 Android 设备的 ANDROID_ID
+   *
+   * @param context 应用上下文
+   * @return 设备的 ANDROID_ID，若无法获取，则返回 null
+   */
+  private void getAndroidId(Context context) {
+    if (context == null) {
+      throw new IllegalArgumentException("Context cannot be null");
+    }
+    executorService.submit(() -> {
+      try {
+        androidId = Settings.Secure.getString(
+            context.getContentResolver(),
+            Settings.Secure.ANDROID_ID
+        );
+      } catch (Exception e) {
+        Log.e("MainActivity", "getAndroidId: Failed to get ANDROID_ID", e);
+      }
+    });
+  }
+
+  private static final int REQUEST_CODE_PERMISSIONS = 100;
+
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -89,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
     instance = new WeakReference<>(this);
 
     initializeExecutorService();
+    getAndroidId(this);
     System.setProperty("java.library.path", this.getApplicationInfo().nativeLibraryDir);
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       // 针对 Android 10 或更低版本检查普通存储权限
@@ -110,6 +135,16 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(intent, ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE);
       }
     }
+    // 添加对 FOREGROUND_SERVICE 权限的检查和请求
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // 判断 Android 13+
+      String[] requiredPermissions = {
+          android.Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION,
+          "android.permission.CAPTURE_VIDEO_OUTPUT"
+      };
+      ActivityCompat.requestPermissions(this, requiredPermissions, REQUEST_CODE_PERMISSIONS);
+    } else {
+      Toast.makeText(this, "当前设备不支持这些权限", Toast.LENGTH_SHORT).show();
+    }
 
     if (!isNetworkAvailable(this)) {
       Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();
@@ -123,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
     // 初始化按钮
     Button runScriptButton = findViewById(R.id.run_script_button);
     if (runScriptButton != null) {
-      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this,""));
+      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
     } else {
       Toast.makeText(this, "Button not found", Toast.LENGTH_SHORT).show();
     }
@@ -164,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 初始化 ChangeDeviceInfoUtil
-    ChangeDeviceInfoUtil.initialize("US", 2);
+    ChangeDeviceInfoUtil.initialize("US", 2, this);
     // 获取输入框和按钮
     EditText inputNumber = findViewById(R.id.input_number);
     Button executeButton = findViewById(R.id.execute_button);
@@ -237,13 +272,13 @@ public class MainActivity extends AppCompatActivity {
           AutoJsUtil.flag = true; // 广播状态更新
         }
 
-        for (int i = 0; i < number; i++) {
+        while (true) {
           synchronized (taskLock) {
             while (!AutoJsUtil.flag) {
               taskLock.wait(30000);
             }
-            Log.d("MainActivity", "任务执行第：" + i);
-            executeSingleLogic(i);
+            executeSingleLogic();
+            TaskUtil.execSaveTask(this);
           }
         }
       } catch (InterruptedException e) {
@@ -257,14 +292,11 @@ public class MainActivity extends AppCompatActivity {
   public static final Object broadcastLock = new Object(); // 广播锁
   public static final Object taskLock = new Object();      // 任务逻辑锁
 
-  public void executeSingleLogic(int i) {
-    Log.i("MainActivity", "executeSingleLogic: Start execution for index " + i);
-    long startTime = System.currentTimeMillis(); // 开始计时
+  public void executeSingleLogic() {
 
     Log.i("MainActivity", "executeSingleLogic: Proxy not active, starting VPN");
     startProxyVpn(this);
 
-    Log.i("MainActivity", "executeSingleLogic: Switching proxy group to " + proxyNames[i]);
     try {
       ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
     } catch (Exception e) {
@@ -273,15 +305,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     Log.i("MainActivity", "executeSingleLogic: Changing device info");
-    String url = ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
+    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
 
     Log.i("MainActivity", "executeSingleLogic: Running AutoJs script");
-    AutoJsUtil.runAutojsScript(this, url);
-
-    runOnUiThread(() -> Toast.makeText(this, "第 " + (i + 1) + " 次执行完成", Toast.LENGTH_SHORT).show());
-
-    long endTime = System.currentTimeMillis(); // 结束计时
-    Log.i("MainActivity", "executeSingleLogic: Finished execution for index " + i + " in " + (endTime - startTime) + " ms");
+    AutoJsUtil.runAutojsScript(this);
   }
 
   private void startProxyVpn(Context context) {
@@ -315,7 +342,29 @@ public class MainActivity extends AppCompatActivity {
         showPermissionExplanationDialog();
       }
     }
+    if (requestCode == REQUEST_CODE_PERMISSIONS) {
+      boolean allGranted = true;
+      for (int result : grantResults) {
+        if (result != PackageManager.PERMISSION_GRANTED) {
+          allGranted = false;
+          break;
+        }
+      }
+
+      if (allGranted) {
+        // 所有权限已授予
+        startMyForegroundService();
+      } else {
+        Toast.makeText(this, "未授予必要权限，请检查设置", Toast.LENGTH_SHORT).show();
+      }
+    }
   }
+
+  private void startMyForegroundService() {
+    Intent serviceIntent = new Intent(this, MyAccessibilityService.class);
+    ContextCompat.startForegroundService(this, serviceIntent);
+  }
+
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
