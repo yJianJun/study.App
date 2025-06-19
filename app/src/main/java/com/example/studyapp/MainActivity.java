@@ -14,7 +14,6 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Toast;
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -35,6 +34,7 @@ import com.example.studyapp.service.MyAccessibilityService;
 import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
   private static final int ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE = 1001;
 
-  public ExecutorService executorService;
+  public static ExecutorService executorService;
 
   // 假设我们从配置文件中提取出了以下 name 项数据（仅为部分示例数据）
   private final String[] proxyNames = {
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
       "ge", "ps"
   };
 
-  public static String androidId;
+  public static volatile String scriptResult;
 
   // 初始化 ExecutorService
   private void initializeExecutorService() {
@@ -88,20 +88,19 @@ public class MainActivity extends AppCompatActivity {
    * @param context 应用上下文
    * @return 设备的 ANDROID_ID，若无法获取，则返回 null
    */
-  private void getAndroidId(Context context) {
+  private String getAndroidId(Context context) {
     if (context == null) {
       throw new IllegalArgumentException("Context cannot be null");
     }
-    executorService.submit(() -> {
-      try {
-        androidId = Settings.Secure.getString(
-            context.getContentResolver(),
-            Settings.Secure.ANDROID_ID
-        );
-      } catch (Exception e) {
-        Log.e("MainActivity", "getAndroidId: Failed to get ANDROID_ID", e);
-      }
-    });
+    try {
+      return Settings.Secure.getString(
+          context.getContentResolver(),
+          Settings.Secure.ANDROID_ID
+      );
+    } catch (Exception e) {
+      Log.e("MainActivity", "getAndroidId: Failed to get ANDROID_ID", e);
+      return null;
+    }
   }
 
   private static final int REQUEST_CODE_PERMISSIONS = 100;
@@ -113,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
     instance = new WeakReference<>(this);
 
     initializeExecutorService();
-    getAndroidId(this);
     System.setProperty("java.library.path", this.getApplicationInfo().nativeLibraryDir);
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       // 针对 Android 10 或更低版本检查普通存储权限
@@ -199,18 +197,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 初始化 ChangeDeviceInfoUtil
-    ChangeDeviceInfoUtil.initialize("US", 2, this);
+    String androidId = getAndroidId(this);
+    ChangeDeviceInfoUtil.initialize("US", 2, this,androidId);
     // 获取输入框和按钮
-    EditText inputNumber = findViewById(R.id.input_number);
     Button executeButton = findViewById(R.id.execute_button);
     Button stopExecuteButton = findViewById(R.id.stop_execute_button);
 
     // 设置按钮的点击事件
-    if (inputNumber != null && executeButton != null) {
+    if (executeButton != null) {
       executeButton.setOnClickListener(v -> {
         executeButton.setEnabled(false);
         Toast.makeText(this, "任务正在执行", Toast.LENGTH_SHORT).show();
-        executeLogic(inputNumber);
+        executeLogic(androidId);
       });
     }
     if (stopExecuteButton != null) {
@@ -227,50 +225,20 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void executeLogic(EditText inputNumber) {
+  private void executeLogic(String androidId) {
     Log.i("MainActivity", "executeLogic: Start execution");
-
-    if (inputNumber == null) {
-      Log.e("MainActivity", "executeLogic: Input box is null!");
-      Toast.makeText(this, "输入框为空", Toast.LENGTH_SHORT).show();
-      return;
-    }
-
-    String numberText = inputNumber.getText().toString().trim();
-    if (TextUtils.isEmpty(numberText)) {
-      Log.e("MainActivity", "executeLogic: No number input provided!");
-      Toast.makeText(this, "请输入一个数字", Toast.LENGTH_SHORT).show();
-      return;
-    }
-
-    int number;
-    try {
-      number = Integer.parseInt(numberText);
-      if (number < 1 || number > 1000) {
-        Log.e("MainActivity", "executeLogic: Invalid number range: " + number);
-        Toast.makeText(this, "请输入 1 到 1000 之间的数字", Toast.LENGTH_SHORT).show();
-        return;
-      }
-    } catch (NumberFormatException e) {
-      Log.e("MainActivity", "executeLogic: Invalid number format: " + numberText, e);
-      Toast.makeText(this, "请输入有效的数字", Toast.LENGTH_SHORT).show();
-      return;
-    }
 
     if (!isNetworkAvailable(this)) {
       Log.e("MainActivity", "executeLogic: Network is not available!");
       Toast.makeText(this, "网络不可用，请检查网络连接", Toast.LENGTH_SHORT).show();
       return;
     }
-
     Log.i("MainActivity", "executeLogic: Submitting job to executor");
     initializeExecutorService();
     executorService.submit(() -> {
       try {
         AutoJsUtil.registerScriptResultReceiver(this);
-        synchronized (broadcastLock) {
-          AutoJsUtil.flag = true; // 广播状态更新
-        }
+        AutoJsUtil.flag = true; // 广播状态更新
 
         while (true) {
           synchronized (taskLock) {
@@ -278,7 +246,10 @@ public class MainActivity extends AppCompatActivity {
               taskLock.wait(30000);
             }
             executeSingleLogic();
-            TaskUtil.execSaveTask(this);
+            TaskUtil.execSaveTask(this,androidId);
+            // if (scriptResult != null && !TextUtils.isEmpty(scriptResult)) {
+            //   infoUpload(this,androidId, scriptResult);
+            // }
           }
         }
       } catch (InterruptedException e) {
@@ -289,7 +260,6 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
-  public static final Object broadcastLock = new Object(); // 广播锁
   public static final Object taskLock = new Object();      // 任务逻辑锁
 
   public void executeSingleLogic() {

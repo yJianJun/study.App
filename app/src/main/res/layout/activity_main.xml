@@ -10,90 +10,79 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:orientation="vertical"
-      android:padding="16dp"
-      android:gravity="center">
+      android:divider="@android:color/darker_gray"
+      android:showDividers="middle"
+      android:dividerPadding="8dp">
 
-        <!-- 分组：VPN 按钮 -->
+        <!-- VPN 分组标题 -->
         <TextView
-          android:layout_width="wrap_content"
+          android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:text="VPN 操作"
-          android:paddingBottom="8dp"
+          android:padding="8dp"
+          android:gravity="center"
           android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
+        <!-- VPN 按钮 -->
         <Button
           android:id="@+id/run_script_button"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="运行 脚本" />
-
         <Button
           android:id="@+id/connectVpnButton"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="开启 VPN" />
-
         <Button
           android:id="@+id/disconnectVpnButton"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="断开 VPN" />
-
         <Button
           android:id="@+id/switchVpnButton"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="切换 VPN" />
 
-        <!-- 分组：设备信息 -->
+        <!-- 设备信息分组标题 -->
         <TextView
-          android:layout_width="wrap_content"
+          android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:text="设备信息操作"
-          android:paddingTop="16dp"
-          android:paddingBottom="8dp"
+          android:padding="8dp"
+          android:gravity="center"
           android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
+        <!-- 设备信息按钮 -->
         <Button
           android:id="@+id/modifyDeviceInfoButton"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="修改设备信息" />
-
         <Button
           android:id="@+id/resetDeviceInfoButton"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="重置设备信息" />
-
-        <!-- 添加输入框和执行按钮 -->
         <TextView
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="输入操作"
-          android:paddingTop="16dp"
-          android:paddingBottom="8dp"
-          android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
-
-        <EditText
-          android:id="@+id/input_number"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
-          android:hint="请输入数字"
-          android:inputType="number" />
-
+          android:text="Bigo操作"
+          android:padding="8dp"
+          android:gravity="center"
+          android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
         <Button
           android:id="@+id/execute_button"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:text="一键执行"
-          android:layout_gravity="center" />
+          android:text="一键执行" />
         <Button
           android:id="@+id/stop_execute_button"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:text="停止执行"
-          android:layout_gravity="center" />
+          android:text="停止执行" />
+
     </LinearLayout>
 
 </ScrollView>

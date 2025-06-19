@@ -48,72 +48,51 @@ public class ChangeDeviceInfoUtil {
   // 创建一个线程池用于执行网络任务
   private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-  public static void initialize(String country, int tag, MainActivity mainActivity) {
+  public static void initialize(String country, int tag, MainActivity mainActivity, String androidId) {
     executorService.submit(() -> {
       try {
-        // 发起网络请求并捕获可能的异常
-        String bigoJson;
-        String afJson;
-        try {
-          bigoJson = HttpUtil.requestGet(buildBigoUrl(country, tag));
-          afJson = HttpUtil.requestGet(buildAfUrl(country, tag));
-        } catch (IOException ioException) {
-          Log.e("Error", "Network request failed", ioException);
-          return;
+        // 发起网络请求
+        String bigoJson = HttpUtil.requestGet(buildBigoUrl(country, tag));
+        String afJson = HttpUtil.requestGet(buildAfUrl(country, tag));
+        String response = executeQuerySafely(androidId);
+
+        // 解析 JSON
+        if (response != null && !response.isBlank() && !response.equals("{}\n")) {
+          JSONObject responseJson = new JSONObject(response);
+          bigoDeviceObject = responseJson.optJSONObject("bigoDeviceObject");
+          afDeviceObject = responseJson.optJSONObject("afDeviceObject");
+        } else {
+          bigoDeviceObject = new JSONObject(bigoJson).optJSONObject("device");
+          afDeviceObject = new JSONObject(afJson).optJSONObject("device");
         }
 
-        // 执行查询任务
-        String response;
-        try {
-          response = TaskUtil.execQueryTask(mainActivity);
-        } catch (Exception e) {
-          Log.e("Error", "Task execution failed", e);
-          return;
-        }
+        // 输出结果
+        Log.d("Debug", "bigoDeviceObject: " + bigoDeviceObject);
+        Log.d("Debug", "afDeviceObject: " + afDeviceObject);
 
-        // 解析 JSON 数据
-        JSONObject bigoDeviceObject;
-        JSONObject afDeviceObject;
-        try {
-          if (response != null) {
-            JSONObject responseJson = new JSONObject(response);
-            bigoDeviceObject = responseJson.optJSONObject("bigoDeviceObject");
-            afDeviceObject = responseJson.optJSONObject("afDeviceObject");
-          } else {
-            bigoDeviceObject = new JSONObject(bigoJson).optJSONObject("device");
-            afDeviceObject = new JSONObject(afJson).optJSONObject("device");
-          }
-        } catch (JSONException e) {
-          Log.e("Error", "Failed to parse JSON", e);
-          return;
-        }
-
-        // 检查解析结果
-        if (bigoDeviceObject == null || afDeviceObject == null) {
-          Log.e("Error", "Device object is missing in response");
-          return;
-        }
-
-        // 输出结果（附加空检查）
-        Log.d("Debug", "bigoDeviceObject: " + (bigoDeviceObject != null ? bigoDeviceObject.toString() : "null"));
-        Log.d("Debug", "afDeviceObject: " + (afDeviceObject != null ? afDeviceObject.toString() : "null"));
-
+      } catch (IOException | JSONException e) {
+        Log.e("Error", "Error occurred during initialization", e);
       } catch (Exception e) {
         Log.e("Error", "Unexpected error occurred", e);
       }
     });
   }
 
+  // 辅助方法：执行网络请求
+  private static String fetchJson(String url) throws IOException {
+    return HttpUtil.requestGet(url);
+  }
+
+  // 辅助方法：执行任务
+  private static String executeQuerySafely(String androidId) {
+    return TaskUtil.execQueryTask(androidId);
+  }
 
 
   public static void changeDeviceInfo(String current_pkg_name, Context context) {
 
-    if (bigoDeviceObject == null || afDeviceObject == null) {
-      Log.e("ChangeDeviceInfoUtil", "Required device JSON objects are not initialized");
-      throw new IllegalStateException("Device initialization failed");
-    }
-
-    try {
+    BigoInfo bigoDevice;
+    if (bigoDeviceObject != null) {
       // BIGO
       String cpuClockSpeed = bigoDeviceObject.optString("cpu_clock_speed");
       String gaid = bigoDeviceObject.optString("gaid");
@@ -134,7 +113,7 @@ public class ChangeDeviceInfoUtil {
       String dpiF = bigoDeviceObject.optString("dpi_f");
       int cpuCoreNum = bigoDeviceObject.optInt("cpu_core_num");
 
-      BigoInfo bigoDevice = new BigoInfo();
+      bigoDevice = new BigoInfo();
       bigoDevice.cpuClockSpeed = cpuClockSpeed;
       bigoDevice.gaid = gaid;
       bigoDevice.userAgent = userAgent;
@@ -152,6 +131,40 @@ public class ChangeDeviceInfoUtil {
       bigoDevice.romFreeExt = romFreeExt;
       bigoDevice.dpiF = dpiF;
       bigoDevice.cpuCoreNum = cpuCoreNum;
+      TaskUtil.setBigoDevice(bigoDevice);
+      try {
+        callVCloudSettings_put(current_pkg_name + ".system_country", systemCountry, context);
+        callVCloudSettings_put(current_pkg_name + ".sim_country", simCountry, context);
+        callVCloudSettings_put(current_pkg_name + ".rom_free_in", String.valueOf(romFreeIn), context);
+        callVCloudSettings_put(current_pkg_name + ".resolution", resolution, context);
+        callVCloudSettings_put(current_pkg_name + ".vendor", vendor, context);
+        callVCloudSettings_put(current_pkg_name + ".battery_scale", String.valueOf(batteryScale), context);
+        callVCloudSettings_put(current_pkg_name + ".os_lang", osLang, context);
+        // callVCloudSettings_put(current_pkg_name + ".model", model, context);
+        callVCloudSettings_put(current_pkg_name + ".net", net, context);
+        callVCloudSettings_put(current_pkg_name + ".dpi", String.valueOf(dpi), context);
+        callVCloudSettings_put(current_pkg_name + ".rom_free_ext", String.valueOf(romFreeExt), context);
+        callVCloudSettings_put(current_pkg_name + ".dpi_f", dpiF, context);
+        callVCloudSettings_put(current_pkg_name + ".cpu_core_num", String.valueOf(cpuCoreNum), context);
+        callVCloudSettings_put(current_pkg_name + ".cpu_clock_speed", cpuClockSpeed, context);
+        callVCloudSettings_put(current_pkg_name + "_gaid", gaid, context);
+        // **User-Agent**
+        callVCloudSettings_put(current_pkg_name + "_user_agent", userAgent, context);
+        // **os_lang**系统语言
+        callVCloudSettings_put(current_pkg_name + "_os_lang", osLang, context);
+        // **os_ver**
+        callVCloudSettings_put(current_pkg_name + "_os_ver", osVer, context);
+        // **tz** (时区)
+        callVCloudSettings_put(current_pkg_name + "_tz", tz, context);
+      } catch (Throwable e) {
+        Log.e("ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
+        throw new RuntimeException("Error occurred in changeDeviceInfo", e);
+      }
+    }
+
+    DeviceInfo deviceInfo;
+    AfInfo afDevice;
+    if (afDeviceObject != null) {
       String advertiserId = afDeviceObject.optString(".advertiserId");
       String model = afDeviceObject.optString(".model");
       String brand = afDeviceObject.optString(".brand");
@@ -167,9 +180,8 @@ public class ChangeDeviceInfoUtil {
       String langCode = afDeviceObject.optString(".lang_code");
       String cpuAbi = afDeviceObject.optString(".deviceData.cpu_abi");
       int yDp = afDeviceObject.optInt(".deviceData.dim.ydp");
-      TaskUtil.setBigoDevice(bigoDevice);
 
-      AfInfo afDevice = new AfInfo();
+      afDevice = new AfInfo();
       afDevice.advertiserId = advertiserId;
       afDevice.model = model;
       afDevice.brand = brand;
@@ -208,8 +220,24 @@ public class ChangeDeviceInfoUtil {
       String persist_sys_cloud_gpu_gl_version = afDeviceObject.optString("persist.sys.cloud.gpu.gl_version", "");
       String persist_sys_cloud_gpu_egl_vendor = afDeviceObject.optString("persist.sys.cloud.gpu.egl_vendor", "");
       String persist_sys_cloud_gpu_egl_version = afDeviceObject.optString("persist.sys.cloud.gpu.egl_version", "");
+      String global_android_id = afDeviceObject.optString(".android_id", "");
+      String anticheck_pkgs = afDeviceObject.optString(".anticheck_pkgs", "");
+      String pm_list_features = afDeviceObject.optString(".pm_list_features", "");
+      String pm_list_libraries = afDeviceObject.optString(".pm_list_libraries", "");
+      String system_http_agent = afDeviceObject.optString("system.http.agent", "");
+      String webkit_http_agent = afDeviceObject.optString("webkit.http.agent", "");
+      String com_fk_tools_pkgInfo = afDeviceObject.optString(".pkg_info", "");
+      String appsflyerKey = afDeviceObject.optString(".appsflyerKey", "");
+      String appUserId = afDeviceObject.optString(".appUserId", "");
+      String disk = afDeviceObject.optString(".disk", "");
+      String operator = afDeviceObject.optString(".operator", "");
+      String cell_mcc = afDeviceObject.optString(".cell.mcc", "");
+      String cell_mnc = afDeviceObject.optString(".cell.mnc", "");
+      String date1 = afDeviceObject.optString(".date1", "");
+      String date2 = afDeviceObject.optString(".date2", "");
+      String bootId = afDeviceObject.optString("BootId", "");
 
-      DeviceInfo deviceInfo = new DeviceInfo();
+      deviceInfo = new DeviceInfo();
       deviceInfo.lang = lang;
       deviceInfo.roProductBrand = ro_product_brand;
       deviceInfo.roProductModel = ro_product_model;
@@ -232,117 +260,65 @@ public class ChangeDeviceInfoUtil {
       deviceInfo.persistSysCloudGpuEglVendor = persist_sys_cloud_gpu_egl_vendor;
       deviceInfo.persistSysCloudGpuEglVersion = persist_sys_cloud_gpu_egl_version;
       TaskUtil.setDeviceInfo(deviceInfo);
+      try {
+        callVCloudSettings_put(current_pkg_name + ".advertiserId", advertiserId, context);
+        callVCloudSettings_put(current_pkg_name + ".model", model, context);
+        callVCloudSettings_put(current_pkg_name + ".brand", brand, context);
+        callVCloudSettings_put(current_pkg_name + ".android_id", androidId, context);
+        callVCloudSettings_put(current_pkg_name + ".lang", lang, context);
+        callVCloudSettings_put(current_pkg_name + ".country", country, context);
+        callVCloudSettings_put(current_pkg_name + ".batteryLevel", batteryLevel, context);
+        callVCloudSettings_put(current_pkg_name + "_screen.optMetrics.stack", stackInfo, context);
+        callVCloudSettings_put(current_pkg_name + ".product", product, context);
+        callVCloudSettings_put(current_pkg_name + ".network", network, context);
+        callVCloudSettings_put(current_pkg_name + ".cpu_abi", cpuAbi, context);
+        callVCloudSettings_put(current_pkg_name + ".lang_code", langCode, context);
+        // **广告标识符 (advertiserId)** 及 **启用状态**
+        boolean isAdIdEnabled = true; // 默认启用广告 ID
+        callVCloudSettings_put(current_pkg_name + ".advertiserIdEnabled", String.valueOf(isAdIdEnabled), context);
 
-      String global_android_id = afDeviceObject.optString(".android_id", "");
-      String anticheck_pkgs = afDeviceObject.optString(".anticheck_pkgs", "");
-      String pm_list_features = afDeviceObject.optString(".pm_list_features", "");
-      String pm_list_libraries = afDeviceObject.optString(".pm_list_libraries", "");
-      String system_http_agent = afDeviceObject.optString("system.http.agent", "");
-      String webkit_http_agent = afDeviceObject.optString("webkit.http.agent", "");
-      String com_fk_tools_pkgInfo = afDeviceObject.optString(".pkg_info", "");
-      String appsflyerKey = afDeviceObject.optString(".appsflyerKey", "");
-      String appUserId = afDeviceObject.optString(".appUserId", "");
-      String disk = afDeviceObject.optString(".disk", "");
-      String operator = afDeviceObject.optString(".operator", "");
-      String cell_mcc = afDeviceObject.optString(".cell.mcc", "");
-      String cell_mnc = afDeviceObject.optString(".cell.mnc", "");
-      String date1 = afDeviceObject.optString(".date1", "");
-      String date2 = afDeviceObject.optString(".date2", "");
-      String bootId = afDeviceObject.optString("BootId", "");
+        JSONObject displayMetrics = new JSONObject();
 
-      // 自动处理分辨率信息
-      // int widthPixels = Integer.parseInt(resolution.split("x")[0]);
-      // int heightPixels = Integer.parseInt(resolution.split("x")[1]);
-      //
-      // 更新屏幕显示相关参数
-      // JSONObject displayMetrics = new JSONObject();
-      // displayMetrics.put("widthPixels", widthPixels);
-      // displayMetrics.put("heightPixels", heightPixels);
-      // displayMetrics.put("densityDpi", dpi);
-      // callVCloudSettings_put("screen.device.displayMetrics", displayMetrics.toString(), context);
+        displayMetrics.put("widthPixels", xPixels);
 
-      // BIGO 替换写死的值为 JSON 动态值
-      callVCloudSettings_put(current_pkg_name + ".system_country", systemCountry, context);
-      callVCloudSettings_put(current_pkg_name + ".sim_country", simCountry, context);
-      callVCloudSettings_put(current_pkg_name + ".rom_free_in", String.valueOf(romFreeIn), context);
-      callVCloudSettings_put(current_pkg_name + ".resolution", resolution, context);
-      callVCloudSettings_put(current_pkg_name + ".vendor", vendor, context);
-      callVCloudSettings_put(current_pkg_name + ".battery_scale", String.valueOf(batteryScale), context);
-      callVCloudSettings_put(current_pkg_name + ".os_lang", osLang, context);
-      // callVCloudSettings_put(current_pkg_name + ".model", model, context);
-      callVCloudSettings_put(current_pkg_name + ".net", net, context);
-      callVCloudSettings_put(current_pkg_name + ".dpi", String.valueOf(dpi), context);
-      callVCloudSettings_put(current_pkg_name + ".rom_free_ext", String.valueOf(romFreeExt), context);
-      callVCloudSettings_put(current_pkg_name + ".dpi_f", dpiF, context);
-      callVCloudSettings_put(current_pkg_name + ".cpu_core_num", String.valueOf(cpuCoreNum), context);
-      callVCloudSettings_put(current_pkg_name + ".cpu_clock_speed", cpuClockSpeed, context);
-      callVCloudSettings_put(current_pkg_name + "_gaid", gaid, context);
-      // **User-Agent**
-      callVCloudSettings_put(current_pkg_name + "_user_agent", userAgent, context);
-      // **os_lang**系统语言
-      callVCloudSettings_put(current_pkg_name + "_os_lang", osLang, context);
-      // **os_ver**
-      callVCloudSettings_put(current_pkg_name + "_os_ver", osVer, context);
-      // **tz** (时区)
-      callVCloudSettings_put(current_pkg_name + "_tz", tz, context);
+        displayMetrics.put("heightPixels", yPixels);
+        displayMetrics.put("densityDpi", densityDpi);
+        displayMetrics.put("yDp", yDp);
+        callVCloudSettings_put("screen.device.displayMetrics", displayMetrics.toString(), context);
 
-      // AF 替换写死的值为 JSON 动态值
-      callVCloudSettings_put(current_pkg_name + ".advertiserId", advertiserId, context);
-      callVCloudSettings_put(current_pkg_name + ".model", model, context);
-      callVCloudSettings_put(current_pkg_name + ".brand", brand, context);
-      callVCloudSettings_put(current_pkg_name + ".android_id", androidId, context);
-      callVCloudSettings_put(current_pkg_name + ".lang", lang, context);
-      callVCloudSettings_put(current_pkg_name + ".country", country, context);
-      callVCloudSettings_put(current_pkg_name + ".batteryLevel", batteryLevel, context);
-      callVCloudSettings_put(current_pkg_name + "_screen.optMetrics.stack", stackInfo, context);
-      callVCloudSettings_put(current_pkg_name + ".product", product, context);
-      callVCloudSettings_put(current_pkg_name + ".network", network, context);
-      callVCloudSettings_put(current_pkg_name + ".cpu_abi", cpuAbi, context);
-      callVCloudSettings_put(current_pkg_name + ".lang_code", langCode, context);
-      // **广告标识符 (advertiserId)** 及 **启用状态**
-      boolean isAdIdEnabled = true; // 默认启用广告 ID
-      callVCloudSettings_put(current_pkg_name + ".advertiserIdEnabled", String.valueOf(isAdIdEnabled), context);
+        if (!ShellUtils.hasRootAccess()) {
+          Log.e("ChangeDeviceInfoUtil", "Root access is required to execute system property changes");
+        }
+        // 设置机型, 直接设置属性
+        ShellUtils.execRootCmd("setprop ro.product.brand " + ro_product_brand);
+        ShellUtils.execRootCmd("setprop ro.product.model " + ro_product_model);
+        ShellUtils.execRootCmd("setprop ro.product.manufacturer " + ro_product_manufacturer);
+        ShellUtils.execRootCmd("setprop ro.product.device " + ro_product_device);
+        ShellUtils.execRootCmd("setprop ro.product.name " + ro_product_name);
+        ShellUtils.execRootCmd("setprop ro.build.version.incremental " + ro_build_version_incremental);
+        ShellUtils.execRootCmd("setprop ro.build.fingerprint " + ro_build_fingerprint);
+        ShellUtils.execRootCmd("setprop ro.odm.build.fingerprint " + ro_odm_build_fingerprint);
+        ShellUtils.execRootCmd("setprop ro.product.build.fingerprint " + ro_product_build_fingerprint);
+        ShellUtils.execRootCmd("setprop ro.system.build.fingerprint " + ro_system_build_fingerprint);
+        ShellUtils.execRootCmd("setprop ro.system_ext.build.fingerprint " + ro_system_ext_build_fingerprint);
+        ShellUtils.execRootCmd("setprop ro.vendor.build.fingerprint " + ro_vendor_build_fingerprint);
+        ShellUtils.execRootCmd("setprop ro.board.platform " + ro_build_platform);
 
-      JSONObject displayMetrics = new JSONObject();
-      displayMetrics.put("widthPixels", xPixels);
-      displayMetrics.put("heightPixels", yPixels);
-      displayMetrics.put("densityDpi", densityDpi);
-      displayMetrics.put("yDp", yDp);
-      callVCloudSettings_put("screen.device.displayMetrics", displayMetrics.toString(), context);
-
-      if (!ShellUtils.hasRootAccess()) {
-        Log.e("ChangeDeviceInfoUtil", "Root access is required to execute system property changes");
+        // Native.setBootId(bootId);
+        // 修改drm id
+        ShellUtils.execRootCmd("setprop persist.sys.cloud.drm.id " + persist_sys_cloud_drm_id);
+        // 电量模拟需要大于1000
+        ShellUtils.execRootCmd("setprop persist.sys.cloud.battery.capacity " + persist_sys_cloud_battery_capacity);
+        ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.gl_vendor " + persist_sys_cloud_gpu_gl_vendor);
+        ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.gl_renderer " + persist_sys_cloud_gpu_gl_renderer);
+        // 这个值不能随便改  必须是 OpenGL ES %d.%d 这个格式
+        ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.gl_version " + persist_sys_cloud_gpu_gl_version);
+        ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.egl_vendor " + persist_sys_cloud_gpu_egl_vendor);
+        ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.egl_version " + persist_sys_cloud_gpu_egl_version);
+      } catch (Throwable e) {
+        Log.e("ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
+        throw new RuntimeException("Error occurred in changeDeviceInfo", e);
       }
-
-      // 设置机型, 直接设置属性
-      ShellUtils.execRootCmd("setprop ro.product.brand " + ro_product_brand);
-      ShellUtils.execRootCmd("setprop ro.product.model " + ro_product_model);
-      ShellUtils.execRootCmd("setprop ro.product.manufacturer " + ro_product_manufacturer);
-      ShellUtils.execRootCmd("setprop ro.product.device " + ro_product_device);
-      ShellUtils.execRootCmd("setprop ro.product.name " + ro_product_name);
-      ShellUtils.execRootCmd("setprop ro.build.version.incremental " + ro_build_version_incremental);
-      ShellUtils.execRootCmd("setprop ro.build.fingerprint " + ro_build_fingerprint);
-      ShellUtils.execRootCmd("setprop ro.odm.build.fingerprint " + ro_odm_build_fingerprint);
-      ShellUtils.execRootCmd("setprop ro.product.build.fingerprint " + ro_product_build_fingerprint);
-      ShellUtils.execRootCmd("setprop ro.system.build.fingerprint " + ro_system_build_fingerprint);
-      ShellUtils.execRootCmd("setprop ro.system_ext.build.fingerprint " + ro_system_ext_build_fingerprint);
-      ShellUtils.execRootCmd("setprop ro.vendor.build.fingerprint " + ro_vendor_build_fingerprint);
-      ShellUtils.execRootCmd("setprop ro.board.platform " + ro_build_platform);
-
-      // Native.setBootId(bootId);
-      // 修改drm id
-      ShellUtils.execRootCmd("setprop persist.sys.cloud.drm.id " + persist_sys_cloud_drm_id);
-      // 电量模拟需要大于1000
-      ShellUtils.execRootCmd("setprop persist.sys.cloud.battery.capacity " + persist_sys_cloud_battery_capacity);
-      ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.gl_vendor " + persist_sys_cloud_gpu_gl_vendor);
-      ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.gl_renderer " + persist_sys_cloud_gpu_gl_renderer);
-      // 这个值不能随便改  必须是 OpenGL ES %d.%d 这个格式
-      ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.gl_version " + persist_sys_cloud_gpu_gl_version);
-      ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.egl_vendor " + persist_sys_cloud_gpu_egl_vendor);
-      ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.egl_version " + persist_sys_cloud_gpu_egl_version);
-    } catch (Throwable e) {
-      Log.e("ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
-      throw new RuntimeException("Error occurred in changeDeviceInfo", e);
     }
   }
 

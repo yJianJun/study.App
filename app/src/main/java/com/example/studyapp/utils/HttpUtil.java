@@ -17,30 +17,41 @@ public class HttpUtil {
 
     public static String requestGet(String url) throws IOException {
         Log.d(TAG, "[requestGet][url=" + url + "]");
-        HttpURLConnection connection = (HttpURLConnection)new URL(url).openConnection();
-        /*connection.setRequestProperty("Connection", "keep-alive");
-        connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
-        connection.setRequestProperty("X-Requested-With", "com.android.chrome");
-        connection.setRequestProperty("Sec-Fetch-Mode", "navigate");
-        connection.setRequestProperty("Sec-Fetch-User", "?1");
-        connection.setRequestProperty("Sec-Fetch-Dest", "document");
-        connection.setRequestProperty("Sec-Fetch-Site", "none");
-        connection.setRequestProperty("Sec-Ch-Ua-Mobile", "?1");
-        connection.setRequestProperty("Sec-Ch-Ua-Platform", "Android");
-        connection.setRequestProperty("Upgrade-Insecure-Requests", "1");
-        connection.setInstanceFollowRedirects(true);*/
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+
+        // 配置请求参数
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+        connection.setRequestProperty("Accept", "application/json");
         connection.setDoInput(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(15000);
         connection.setRequestMethod("GET");
         connection.setUseCaches(false);
+
+        // 连接
         connection.connect();
 
-        String responseBody = readResponseBody(connection);
-        Log.d(TAG, "[requestGet][response=" + responseBody + "]");
-        connection.disconnect();
-
-        return responseBody;
+        // 检查响应代码
+        int responseCode = connection.getResponseCode();
+        if (responseCode >= 200 && responseCode < 300) {
+            Log.d(TAG, "[requestGet][responseCode=" + responseCode + "]");
+            return readResponseBody(connection);
+        } else {
+            // 记录错误信息
+            InputStream errorStream = connection.getErrorStream();
+            String errorResponse = "";
+            if (errorStream != null) {
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = errorStream.read(buffer)) > 0) {
+                    byteArrayOutputStream.write(buffer, 0, len);
+                }
+                errorResponse = byteArrayOutputStream.toString();
+            }
+            connection.disconnect();
+            throw new IOException("HTTP request failed with code " + responseCode + ". Error: " + errorResponse);
+        }
     }
 
 
