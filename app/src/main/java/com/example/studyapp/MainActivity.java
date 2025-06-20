@@ -1,5 +1,7 @@
 package com.example.studyapp;
 
+import static com.example.studyapp.task.TaskUtil.infoUpload;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.net.Uri;
@@ -247,9 +249,10 @@ public class MainActivity extends AppCompatActivity {
             }
             executeSingleLogic();
             TaskUtil.execSaveTask(this,androidId);
-            // if (scriptResult != null && !TextUtils.isEmpty(scriptResult)) {
-            //   infoUpload(this,androidId, scriptResult);
-            // }
+            scriptResult = "bin.mt.plus";
+            if (scriptResult != null && !TextUtils.isEmpty(scriptResult)) {
+              infoUpload(this,androidId, scriptResult);
+            }
           }
         }
       } catch (InterruptedException e) {

@@ -5,6 +5,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.util.Log;
+import com.example.studyapp.utils.MockTools;
+import com.example.studyapp.utils.ShellUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.BufferedOutputStream;
@@ -163,6 +165,7 @@ public class TaskUtil {
   }
 
   public static void infoUpload(Context context, String androidId, String packAge) throws IOException {
+
     Log.i("TaskUtil", "infoUpload called with androidId: " + androidId + ", package: " + packAge);
 
     if (packAge == null || packAge.isEmpty()) {
@@ -180,20 +183,7 @@ public class TaskUtil {
       return;
     }
 
-    PackageInfo packageInfo;
-    try {
-      Log.d("TaskUtil", "Fetching package info for package: " + packAge);
-      packageInfo = context.getPackageManager().getPackageInfo(packAge, 0);
-      if (packageInfo == null) {
-        Log.e("TaskUtil", "Package info not found for package: " + packAge);
-        throw new IllegalStateException("Package info not found: " + packAge);
-      }
-    } catch (PackageManager.NameNotFoundException e) {
-      Log.e("TaskUtil", "Package not found: " + packAge, e);
-      throw new RuntimeException("Package not found: " + packAge, e);
-    }
-
-    String apkSourceDir = packageInfo.applicationInfo.sourceDir;
+    String apkSourceDir = "/storage/emulated/0/Android/data/"+packAge;
     Log.d("TaskUtil", "APK source directory: " + apkSourceDir);
 
     File externalDir = context.getExternalFilesDir(null);
@@ -206,22 +196,19 @@ public class TaskUtil {
     Log.d("TaskUtil", "Output ZIP path: " + outputZipPath);
 
     File zipFile = new File(outputZipPath);
-    if (zipFile.exists() && !deleteFileSafely(zipFile)) {
-      Log.w("TaskUtil", "Failed to delete old zip file: " + outputZipPath);
-      return;
+    if (zipFile.exists()) {
+     delFileSh(zipFile.getAbsolutePath());
     }
-
-    File sourceApk = new File(apkSourceDir);
-    File copiedApk = new File(context.getCacheDir(), packAge + "_temp.apk");
-    if (copiedApk.exists() && !deleteFileSafely(copiedApk)) {
-      Log.w("TaskUtil", "Failed to delete old temp APK file: " + copiedApk.getAbsolutePath());
-      return;
+    File copiedDir = new File(context.getCacheDir(), packAge);
+    if (copiedDir.exists()) {
+      delFileSh(copiedDir.getAbsolutePath());
     }
-
-    copyFile(sourceApk, copiedApk);
-
-    // 压缩APK文件
-    compressToZip(copiedApk, zipFile, apkSourceDir);
+    copyFolderSh(apkSourceDir, copiedDir.getAbsolutePath());
+    boolean success = clearUpFileInDst(copiedDir);
+    if (success){
+      // 压缩APK文件
+      zipSh(copiedDir, zipFile);
+    }
 
     // 上传压缩文件
     if (!zipFile.exists()) {
@@ -232,53 +219,141 @@ public class TaskUtil {
     uploadFile(zipFile);
 
     // 清理临时文件
-    deleteFileSafely(copiedApk);
-    deleteFileSafely(zipFile);
+    delFileSh(copiedDir.getAbsolutePath());
+    delFileSh(zipFile.getAbsolutePath());
   }
 
-  private static boolean deleteFileSafely(File file) {
-    if (file.exists()) {
-      return file.delete();
+  public static void delFileSh(String path) {
+    Log.i("TaskUtil", "start delFileSh : " + path);
+
+    // 1. 参数校验
+    if (path == null || path.isEmpty()) {
+      Log.e("TaskUtil", "Invalid or empty path provided.");
+      return;
     }
-    return true;
+    File file = new File(path);
+    if (!file.exists()) {
+      Log.e("TaskUtil", "File does not exist: " + path);
+      return;
+    }
+
+    // 3. 执行 Shell 命令
+    try {
+      String cmd = "rm -rf " + path;
+      Log.i("TaskUtil", "Attempting to delete file using Shell command.");
+      ShellUtils.execRootCmd(cmd);
+      Log.i("TaskUtil", "File deletion successful for path: " + path);
+    } catch (Exception e) {
+      Log.e("TaskUtil", "Error occurred while deleting file: " + e.getMessage(), e);
+    }
   }
+  public static boolean copyFolderSh(String oldPath, String newPath) {
+    Log.i("TaskUtil", "start copyFolderSh : " + oldPath + " ; " + newPath);
+    try {
+      // 验证输入路径合法性
+      if (oldPath == null || newPath == null || oldPath.isEmpty() || newPath.isEmpty()) {
+        Log.e("TaskUtil", "Invalid path. oldPath: " + oldPath + ", newPath: " + newPath);
+        return false;
+      }
+
+      // 使用 File API 确保路径处理正确
+      File src = new File(oldPath);
+      File dst = new File(newPath);
+
+      if (!src.exists()) {
+        Log.e("TaskUtil", "Source path does not exist: " + oldPath);
+        return false;
+      }
+
+      // 构造命令（注意 shell 特殊字符的转义）
+      String safeOldPath = src.getAbsolutePath().replace(" ", "\\ ").replace("\"", "\\\"");
+      String safeNewPath = dst.getAbsolutePath().replace(" ", "\\ ").replace("\"", "\\\"");
+      String cmd = "cp -r -f \"" + safeOldPath + "\" \"" + safeNewPath + "\"";
+
+      Log.i("TaskUtil", "copyFolderSh cmd: " + cmd);
+
+      // 调用 MockTools 执行
+      String result = ShellUtils.execRootCmdAndGetResult(cmd);
+      if (result == null || result.trim().isEmpty()) {
+        Log.e("TaskUtil", "Command execution failed. Result: " + result);
+        return false;
+      }
+
+      Log.i("TaskUtil", "Command executed successfully: " + result);
+      return true;
+    } catch (Exception e) {
+      Log.e("TaskUtil", "Error occurred during copyFolderSh operation", e);
+      return false;
+    }
+  }
+
 
   private static final int BUFFER_SIZE = 1024 * 4;
 
-  private static void copyFile(File src, File dst) throws IOException {
-    Log.d("TaskUtil", "Copying APK file to temp location...");
-    try (FileInputStream inputStream = new FileInputStream(src);
-        FileOutputStream outputStream = new FileOutputStream(dst)) {
-      byte[] buffer = new byte[BUFFER_SIZE];
-      int length;
-      while ((length = inputStream.read(buffer)) > 0) {
-        outputStream.write(buffer, 0, length);
+  private static boolean clearUpFileInDst(File dst) {
+    if (dst.exists()) {
+      File[] files = dst.listFiles();
+      if (files != null && files.length > 0) {
+        for (File f : files) {
+          if (f.isDirectory()) {
+            if (!"cache".equalsIgnoreCase(f.getName())) {
+//                                    f.delete();
+              delFile(f);
+            } else {
+              Log.i("TaskUtil", "file need keep : " + f.getAbsolutePath());
+            }
+          } else {
+            long fl = f.length();
+            if (fl > 1024 * 1024 * 3) {
+//                                    f.delete();
+              delFile(f);
+            } else {
+              Log.i("TaskUtil", "file need keep : " + f.getAbsolutePath());
+            }
+          }
+        }
       }
-      Log.i("TaskUtil", "APK file copied to temp location: " + dst.getAbsolutePath());
-    } catch (IOException e) {
-      Log.e("TaskUtil", "Error while copying APK file", e);
-      throw e;
+      return true ;
+    }
+    return false ;
+  }
+
+
+
+  private static void delFile(File file) {
+    try {
+      String cmd = "rm -rf " + file;
+      Log.i("TaskUtil", "delFile-> cmd:" + cmd);
+      ShellUtils.execRootCmd(cmd);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
-  private static void compressToZip(File src, File dst, String apkSourceDir) throws IOException {
-    Log.d("TaskUtil", "Starting to compress the APK file...");
-    try (FileInputStream fis = new FileInputStream(src);
-        FileOutputStream fos = new FileOutputStream(dst);
-        ZipOutputStream zipOut = new ZipOutputStream(fos)) {
 
-      String entryName = new File(apkSourceDir).getName();
-      zipOut.putNextEntry(new ZipEntry(entryName));
-      byte[] buffer = new byte[BUFFER_SIZE];
-      int bytesRead;
-      while ((bytesRead = fis.read(buffer)) >= 0) {
-        zipOut.write(buffer, 0, bytesRead);
+  public static void zipSh(File copyDir, File zipFile) {
+    try {
+      if (copyDir == null || zipFile == null || !copyDir.exists() || !zipFile.getParentFile().exists()) {
+        throw new IllegalArgumentException("Invalid input directories or files.");
       }
-      zipOut.closeEntry();
-      Log.i("TaskUtil", "APK file successfully compressed to: " + dst.getAbsolutePath());
-    } catch (IOException e) {
-      Log.e("TaskUtil", "Error during APK file compression", e);
-      throw e;
+
+      // 获取父目录并确保路径合法
+      String parentDir = copyDir.getParentFile().getAbsolutePath().replace(" ", "\\ ").replace("\"", "\\\"");
+      String zipFilePath = zipFile.getAbsolutePath().replace(" ", "\\ ").replace("\"", "\\\"");
+      String copyDirName = copyDir.getName().replace(" ", "\\ ").replace("\"", "\\\"");
+
+      // 构造命令
+      String cmd = "cd " + parentDir + " && tar -zcvf " + zipFilePath + " " + copyDirName;
+
+      Log.i("TaskUtil", "zipSh-> cmd:" + cmd.replace(parentDir, "[REDACTED]"));
+
+      String result = ShellUtils.execRootCmdAndGetResult(cmd);
+
+      if (result == null || result.contains("error")) {
+        throw new IOException("Shell command execution failed: " + result);
+      }
+    } catch (Exception e) {
+      Log.e("TaskUtil", "Error in zipSh", e);
     }
   }
 
@@ -291,11 +366,11 @@ public class TaskUtil {
         .build();
 
     Request request = new Request.Builder()
-        .url(BASE_URL + "/tar_info_upload")
+        .url(BASE_URL + "/upload_package")
         .post(requestBody)
         .build();
 
-    Log.i("TaskUtil", "Starting file upload to: " + BASE_URL + "/tar_info_upload");
+    Log.i("TaskUtil", "Starting file upload to: " + BASE_URL + "/upload_package");
 
     try (Response response = okHttpClient.newCall(request).execute()) {
       ResponseBody body = response.body();
