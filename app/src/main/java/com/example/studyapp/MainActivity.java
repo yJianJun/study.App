@@ -250,7 +250,6 @@ public class MainActivity extends AppCompatActivity {
             }
             executeSingleLogic();
             TaskUtil.execSaveTask(this, androidId,taskId);
-            scriptResult = "bin.mt.plus";
             if (scriptResult != null && !TextUtils.isEmpty(scriptResult)) {
               infoUpload(this, androidId, scriptResult);
             }

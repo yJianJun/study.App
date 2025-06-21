@@ -96,30 +96,32 @@ public class ChangeDeviceInfoUtil {
         Log.d("TaskUtil", "Package info retrieved: " + packageInfo);
 
         // 遍历包信息并执行逻辑
-        for (String packAgeName : packageInfo.keySet()) {
-          Log.d("TaskUtil", "Processing package: " + packAgeName);
-          if (isAppInstalled(packAgeName)) {
-            Log.d("TaskUtil", "Package installed: " + packAgeName);
+        if (packageInfo != null) {
+          for (String packAgeName : packageInfo.keySet()) {
+            Log.d("TaskUtil", "Processing package: " + packAgeName);
+            if (isAppInstalled(packAgeName)) {
+              Log.d("TaskUtil", "Package installed: " + packAgeName);
 
-            File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
-            Log.d("TaskUtil", "Files directory: " + filesDir.getAbsolutePath());
+              File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
+              Log.d("TaskUtil", "Files directory: " + filesDir.getAbsolutePath());
 
-            File file = TaskUtil.downloadCodeFile(packageInfo.get(packAgeName), filesDir);
-            if (file != null && file.exists()) {
-              Log.d("TaskUtil", "File downloaded: " + file.getAbsolutePath());
-              File destDir = new File("/storage/emulated/0/Android/data/" + packAgeName);
-              Log.d("TaskUtil", "Unzipping to destination: " + destDir.getAbsolutePath());
+              File file = TaskUtil.downloadCodeFile(packageInfo.get(packAgeName), filesDir);
+              if (file != null && file.exists()) {
+                Log.d("TaskUtil", "File downloaded: " + file.getAbsolutePath());
+                File destDir = new File("/storage/emulated/0/Android/data/" + packAgeName);
+                Log.d("TaskUtil", "Unzipping to destination: " + destDir.getAbsolutePath());
 
-              TaskUtil.unZip(destDir, file);
-              Log.d("TaskUtil", "Unzip completed. Deleting file: " + file.getAbsolutePath());
+                TaskUtil.unZip(destDir, file);
+                Log.d("TaskUtil", "Unzip completed. Deleting file: " + file.getAbsolutePath());
 
-              TaskUtil.delFileSh(file.getAbsolutePath());
-              Log.d("TaskUtil", "Temporary file deleted: " + file.getAbsolutePath());
+                TaskUtil.delFileSh(file.getAbsolutePath());
+                Log.d("TaskUtil", "Temporary file deleted: " + file.getAbsolutePath());
+              } else {
+                Log.w("TaskUtil", "File download failed or file does not exist for package: " + packAgeName);
+              }
             } else {
-              Log.w("TaskUtil", "File download failed or file does not exist for package: " + packAgeName);
+              Log.w("TaskUtil", "Package not installed: " + packAgeName);
             }
-          } else {
-            Log.w("TaskUtil", "Package not installed: " + packAgeName);
           }
         }
       } catch (IOException | JSONException e) {
