@@ -3,16 +3,12 @@ package com.example.studyapp.autoJS;
 
 import static com.example.studyapp.MainActivity.taskLock;
 import static com.example.studyapp.task.TaskUtil.downloadCodeFile;
-import static com.example.studyapp.task.TaskUtil.infoUpload;
 
-import android.Manifest;
-import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -22,18 +18,9 @@ import android.widget.Toast;
 import androidx.core.content.ContextCompat;
 
 import com.example.studyapp.MainActivity;
-import com.example.studyapp.request.ScriptResultRequest;
-import com.example.studyapp.service.CloudPhoneManageService;
 
+import com.example.studyapp.utils.ShellUtils;
 import java.io.File;
-
-import java.io.IOException;
-import java.util.Objects;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class AutoJsUtil {
 
@@ -45,19 +32,17 @@ public class AutoJsUtil {
   public static void runAutojsScript(Context context) {
     // 检查脚本文件
     Log.i("AutoJsUtil", "-------脚本运行开始：--------" + count++);
-    File scriptFile = new File(Environment.getExternalStorageDirectory(), "script/main.js");
-
-    if (!scriptFile.exists()) {
-      scriptFile = downloadCodeFile("main.js");
-      if (scriptFile == null || !scriptFile.exists()) {
-        runOnUiThread(() -> Toast.makeText(context, "下载脚本文件失败", Toast.LENGTH_SHORT).show());
-        Log.e("AutoJsUtil", "下载脚本文件失败");
-        return;
-      }
+    File scriptDir = new File(Environment.getExternalStorageDirectory(), "script");
+    scriptDir.delete();
+    File scriptFile = downloadCodeFile("main.js", scriptDir);
+    if (scriptFile == null || !scriptFile.exists()) {
+      runOnUiThread(() -> Toast.makeText(context, "下载脚本文件失败", Toast.LENGTH_SHORT).show());
+      Log.e("AutoJsUtil", "下载脚本文件失败");
+      return;
     }
 
     // 检查是否安装 Auto.js
-    if (!isAppInstalled("org.autojs.autojs6", context.getPackageManager())) {
+    if (!isAppInstalled("org.autojs.autojs6")) {
       runOnUiThread(() -> Toast.makeText(context, "Auto.js app not installed", Toast.LENGTH_SHORT).show());
       return;
     }
@@ -87,12 +72,10 @@ public class AutoJsUtil {
         public void onReceive(Context context, Intent intent) {
           Log.d("MainActivity", "----脚本运行结束通知一次------; 当前线程：" + Thread.currentThread().getName());
           String scriptResult = intent.getStringExtra(SCRIPT_RESULT_KEY);
-          if (scriptResult != null && !scriptResult.isEmpty()) {
-            synchronized (taskLock) {
-              AutoJsUtil.flag = true;
-              MainActivity.scriptResult = scriptResult;
-              taskLock.notifyAll(); // 唤醒任务线程
-            }
+          synchronized (taskLock) {
+            AutoJsUtil.flag = true;
+            MainActivity.scriptResult = scriptResult;
+            taskLock.notifyAll(); // 唤醒任务线程
           }
         }
 
@@ -125,14 +108,27 @@ public class AutoJsUtil {
   }
 
   // 检查目标应用是否安装
-  public static boolean isAppInstalled(String packageName, PackageManager packageManager) {
+  public static boolean isAppInstalled(String packageName) {
+    Log.d("isAppInstalled", "Checking if app is installed: " + packageName);
+
+    // 通过 Shell 命令实现检测
     try {
-      packageManager.getPackageInfo(packageName, 0);
-      return true;
-    } catch (PackageManager.NameNotFoundException e) {
+      String cmd = "pm list packages | grep " + packageName;
+      String result = ShellUtils.execRootCmdAndGetResult(cmd);
+
+      if (result != null && result.contains(packageName)) {
+        Log.d("isAppInstalled", "App is installed: " + packageName);
+        return true;
+      } else {
+        Log.w("isAppInstalled", "App not installed: " + packageName);
+        return false;
+      }
+    } catch (Exception e) {
+      Log.e("isAppInstalled", "Unexpected exception while checking app installation: " + packageName, e);
       return false;
     }
   }
+
 
   private static final String AUTOJS_SCRIPT_FINISHED_ACTION = "org.autojs.SCRIPT_FINISHED";
   private static final String SCRIPT_RESULT_KEY = "result";

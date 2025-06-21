@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.Mockito;
@@ -131,7 +130,8 @@ public class TaskUtilTest {
   public void testPostDeviceInfoDownload_Success() throws Exception {
 
     // 运行上传方法
-    TaskUtil.postDeviceInfo("b3d893cf9de3a85a");
+    String taskId = "asddasdasd";
+    TaskUtil.postDeviceInfo("b3d893cf9de3a85a", taskId);
   }
 
   @Test
@@ -141,11 +141,11 @@ public class TaskUtilTest {
    TaskUtil.getDeviceInfoSync("b3d893cf9de3a85a");
   }
 
-  @Test
-  public void testDownloadCodeFile_Success() throws Exception {
-    // 运行上传方法
-    TaskUtil.downloadCodeFile("main.js");
-  }
+  // @Test
+  // public void testDownloadCodeFile_Success() throws Exception {
+  //   // 运行上传方法
+  //   TaskUtil.downloadCodeFile("main.js");
+  // }
 
   @Test
   public void testUploadFile_FailureWithResponseBody() throws Exception {

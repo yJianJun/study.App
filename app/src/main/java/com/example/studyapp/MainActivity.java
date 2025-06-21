@@ -36,7 +36,7 @@ import com.example.studyapp.service.MyAccessibilityService;
 import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 import java.lang.ref.WeakReference;
-import java.util.concurrent.CountDownLatch;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -200,7 +200,8 @@ public class MainActivity extends AppCompatActivity {
 
     // 初始化 ChangeDeviceInfoUtil
     String androidId = getAndroidId(this);
-    ChangeDeviceInfoUtil.initialize("US", 2, this,androidId);
+    String taskId = UUID.randomUUID().toString();
+    ChangeDeviceInfoUtil.initialize("US", 2, this, androidId);
     // 获取输入框和按钮
     Button executeButton = findViewById(R.id.execute_button);
     Button stopExecuteButton = findViewById(R.id.stop_execute_button);
@@ -210,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
       executeButton.setOnClickListener(v -> {
         executeButton.setEnabled(false);
         Toast.makeText(this, "任务正在执行", Toast.LENGTH_SHORT).show();
-        executeLogic(androidId);
+        executeLogic(androidId,taskId);
       });
     }
     if (stopExecuteButton != null) {
@@ -227,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void executeLogic(String androidId) {
+  private void executeLogic(String androidId,String taskId) {
     Log.i("MainActivity", "executeLogic: Start execution");
 
     if (!isNetworkAvailable(this)) {
@@ -248,10 +249,10 @@ public class MainActivity extends AppCompatActivity {
               taskLock.wait(30000);
             }
             executeSingleLogic();
-            TaskUtil.execSaveTask(this,androidId);
+            TaskUtil.execSaveTask(this, androidId,taskId);
             scriptResult = "bin.mt.plus";
             if (scriptResult != null && !TextUtils.isEmpty(scriptResult)) {
-              infoUpload(this,androidId, scriptResult);
+              infoUpload(this, androidId, scriptResult);
             }
           }
         }
