@@ -263,9 +263,9 @@ public class MainActivity extends AppCompatActivity {
           String currentScriptResult = scriptResultQueue.take();
           ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2);
           executeSingleLogic();
-          TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult);
           LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "----发送result------;" + currentScriptResult, null);
           if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {
+            TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult);
             infoUpload(this, androidId, currentScriptResult);
           }
           Thread.sleep(5000);
