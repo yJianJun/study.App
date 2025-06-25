@@ -1,8 +1,12 @@
 package com.example.studyapp.task;
 
+import static androidx.core.content.PackageManagerCompat.LOG_TAG;
+
 import android.content.Context;
 import android.os.Environment;
+import android.text.TextUtils;
 import android.util.Log;
+import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
 import com.google.android.gms.common.util.CollectionUtils;
 import com.google.android.gms.common.util.MapUtils;
@@ -16,6 +20,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -56,16 +61,16 @@ public class TaskUtil {
       .readTimeout(30, TimeUnit.SECONDS)    // 读取超时
       .build();
 
-  public static void postDeviceInfo(String androidId, String taskId) {
+  public static void postDeviceInfo(String androidId, String taskId,String packageName) {
     Log.i("TaskUtil", "postDeviceInfo called with androidId: " + androidId);
 
     if (okHttpClient == null) {
-      Log.e("TaskUtil", "HttpClient is not initialized");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "HttpClient is not initialized", null);
       throw new IllegalStateException("HttpClient is not initialized");
     }
 
     if (BASE_URL == null || BASE_URL.isEmpty()) {
-      Log.e("TaskUtil", "BASE_URL is not initialized");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "BASE_URL is not initialized", null);
       throw new IllegalStateException("BASE_URL is not initialized");
     }
 
@@ -80,11 +85,15 @@ public class TaskUtil {
 
     Log.d("TaskUtil", "Request payload: " + jsonRequestBody);
 
+    if (packageName == null){
+      packageName = "";
+    }
     HttpUrl url = HttpUrl.parse(BASE_URL)
         .newBuilder()
         .addPathSegment("device_info_upload")
         .addQueryParameter("id", androidId)
         .addQueryParameter("taskId", taskId)
+        .addQueryParameter("packageName", packageName)
         .build();
 
     Log.d("TaskUtil", "Request URL: " + url.toString());
@@ -102,7 +111,7 @@ public class TaskUtil {
       Response response = okHttpClient.newCall(request).execute();
       try (ResponseBody responseBody = response.body()) {
         if (!response.isSuccessful()) {
-          Log.e("TaskUtil", "Request failed with status: " + response.code() + ", message: " + response.message());
+          LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Request failed with status: " + response.code(), null);
           return;
         }
 
@@ -110,17 +119,17 @@ public class TaskUtil {
           String responseText = responseBody.string();
           Log.i("TaskUtil", "Request succeeded. Response: " + responseText);
         } else {
-          Log.e("TaskUtil", "Response body is null");
+          LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Response body is null", null);
         }
       } catch (IOException e) {
-        Log.e("TaskUtil", "Error while processing response: " + e.getMessage(), e);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Error while processing response: " + e.getMessage(), e);
       }
     } catch (IOException e) {
-      Log.e("TaskUtil", "Network call failed: " + e.getMessage(), e);
+     LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Error during HTTP request: " + e.getMessage(), e);
     }
   }
 
-  public static String getDeviceInfoSync(String androidId) {
+  public static String getDeviceInfoSync(String androidId,String taskId) {
     Log.d("TaskUtil", "getDeviceInfoSync called with androidId: " + androidId);
 
     validate(); // 检查 BASE_URL 和 okHttpClient 的合法性
@@ -128,6 +137,7 @@ public class TaskUtil {
     HttpUrl url = HttpUrl.parse(BASE_URL + "/device_info_download")
         .newBuilder()
         .addQueryParameter("androidId", androidId)
+        .addQueryParameter("taskId",taskId)
         .build();
 
     Log.d("TaskUtil", "Constructed URL for device info download: " + url.toString());
@@ -145,7 +155,7 @@ public class TaskUtil {
         String errorMessage = "Unexpected response: Code=" + response.code() +
             ", Message=" + response.message() +
             ", URL=" + url.toString();
-        Log.e("TaskUtil", errorMessage);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", errorMessage, null);
         throw new IOException(errorMessage);
       }
 
@@ -156,29 +166,39 @@ public class TaskUtil {
         return responseString;
       } else {
         String errorMessage = "Response body is null: URL=" + url.toString();
-        Log.e("TaskUtil", errorMessage);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", errorMessage, null);
         throw new IOException(errorMessage);
       }
     } catch (IOException e) {
       String errorMessage = "Error during HTTP request. URL=" + url.toString() +
           ", Android ID=" + androidId;
-      Log.e("TaskUtil", errorMessage, e);
-      e.printStackTrace();
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", errorMessage, e);
       return null; // 或考虑在上层抛出异常
     }
   }
+
+  public static String getApkPath(Context context, String packageName) {
+    if (packageName == null || packageName.trim().isEmpty()) {
+      throw new IllegalArgumentException("Package name must not be null or empty");
+    }
+
+    String result = ShellUtils.getPackagePath(context, packageName);
+    Log.d("TAG", "getApkPath: "+result);
+    return result;
+  }
+
 
   public static void infoUpload(Context context, String androidId, String packAge) throws IOException {
 
     Log.i("TaskUtil", "infoUpload called with androidId: " + androidId + ", package: " + packAge);
 
     if (packAge == null || packAge.isEmpty()) {
-      Log.e("TaskUtil", "Package name is null or empty");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Package name is null or empty", null);
       throw new IllegalArgumentException("Package name cannot be null or empty");
     }
 
     if (context == null) {
-      Log.e("TaskUtil", "Context is null");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Context is null", null);
       throw new IllegalArgumentException("Context cannot be null");
     }
 
@@ -187,12 +207,13 @@ public class TaskUtil {
       return;
     }
 
-    String apkSourceDir = "/storage/emulated/0/Android/data/" + packAge;
-    Log.d("TaskUtil", "APK source directory: " + apkSourceDir);
+    String  apkSourceFile = getApkPath(context, packAge);
+    Log.d("TaskUtil", "APK source directory: " + apkSourceFile);
 
-    File externalDir = context.getExternalFilesDir(null);
+//    File externalDir = context.getExternalFilesDir(null);
+    File externalDir = context.getCacheDir();
     if (externalDir == null) {
-      Log.e("TaskUtil", "External storage directory is unavailable");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "External storage directory is unavailable", null);
       throw new IOException("External storage directory is unavailable");
     }
 
@@ -203,17 +224,19 @@ public class TaskUtil {
     if (zipFile.exists()) {
       delFileSh(zipFile.getAbsolutePath());
     }
-    File copiedDir = new File(context.getCacheDir(), packAge);
-    if (copiedDir.exists()) {
-      delFileSh(copiedDir.getAbsolutePath());
+    File copiedAPKFile = new File(context.getCacheDir(), packAge+"_upload.apk");
+    if (copiedAPKFile.exists()) {
+      delFileSh(copiedAPKFile.getAbsolutePath());
     }
-    copyFolderSh(apkSourceDir, copiedDir.getAbsolutePath());
-    boolean success = clearUpFileInDst(copiedDir);
-    if (success) {
-      // 压缩APK文件
-      compressToZip(copiedDir, zipFile);
-    }
+    copyFolderSh(apkSourceFile, copiedAPKFile.getAbsolutePath());
+    // boolean success = clearUpFileInDst(copiedDir);
+    // if (success) {
+    //   // 压缩APK文件
+    //   compressToZip(copiedDir, zipFile);
+    // }
 
+    // 压缩APK文件
+    compressToZip(copiedAPKFile, zipFile);
     // 上传压缩文件
     if (!zipFile.exists()) {
       Log.w("TaskUtil", "Upload file does not exist: " + outputZipPath);
@@ -222,8 +245,11 @@ public class TaskUtil {
 
     uploadFile(zipFile);
 
+    //uninstall
+    String uninstall = "pm uninstall "+packAge;
+    String chmodResult = ShellUtils.execRootCmdAndGetResult(uninstall);
     // 清理临时文件
-    delFileSh(copiedDir.getAbsolutePath());
+    delFileSh(copiedAPKFile.getAbsolutePath());
     delFileSh(zipFile.getAbsolutePath());
   }
 
@@ -232,7 +258,7 @@ public class TaskUtil {
     try {
       // 验证输入路径合法性
       if (oldPath == null || newPath == null || oldPath.isEmpty() || newPath.isEmpty()) {
-        Log.e("TaskUtil", "Invalid path. oldPath: " + oldPath + ", newPath: " + newPath);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Invalid path. oldPath: " + oldPath + ", newPath: " + newPath, null);
         return false;
       }
 
@@ -241,7 +267,7 @@ public class TaskUtil {
       File dst = new File(newPath);
 
       if (!src.exists()) {
-        Log.e("TaskUtil", "Source path does not exist: " + oldPath);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Source path does not exist: " + oldPath,null);
         return false;
       }
 
@@ -254,19 +280,33 @@ public class TaskUtil {
 
       // 调用 MockTools 执行
       String result = ShellUtils.execRootCmdAndGetResult(cmd);
+      String chmod = "chmod 777 \"" + safeNewPath + "\"";
+      String chmodResult = ShellUtils.execRootCmdAndGetResult(chmod);
+//      if (!TextUtils.isEmpty(chmodResult)) {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "chmodResult. Result: " + chmodResult, null);
+//        return false;
+//      }
       if (result == null || result.trim().isEmpty()) {
-        Log.e("TaskUtil", "Command execution failed. Result: " + result);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Command execution failed. Result: " + result, null);
         return false;
       }
 
       Log.i("TaskUtil", "Command executed successfully: " + result);
       return true;
     } catch (Exception e) {
-      Log.e("TaskUtil", "Error occurred during copyFolderSh operation", e);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Error occurred during copyFolderSh operation", e);
       return false;
     }
   }
 
+  /**
+   *在给定的目标目录中清除特定的文件和目录。
+   *子目录未命名为“缓存”，并且删除了大于3 MB的文件。
+   *记录保留的文件和目录的路径。
+   *
+   * @param DST将处理其文件和子目录的目标目录
+   * @return true如果目的目录存在并且已成功处理，则为false否则
+   */
   private static boolean clearUpFileInDst(File dst) {
     if (dst.exists()) {
       File[] files = dst.listFiles();
@@ -300,12 +340,12 @@ public class TaskUtil {
 
     // 1. 参数校验
     if (path == null || path.isEmpty()) {
-      Log.e("TaskUtil", "Invalid or empty path provided.");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR,"TaskUtil", "Invalid or empty path provided.", null);
       return;
     }
     File file = new File(path);
     if (!file.exists()) {
-      Log.e("TaskUtil", "File does not exist: " + path);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR,"TaskUtil","File does not exist: " + path, null);
       return;
     }
 
@@ -316,13 +356,13 @@ public class TaskUtil {
       ShellUtils.execRootCmd(cmd);
       Log.i("TaskUtil", "File deletion successful for path: " + path);
     } catch (Exception e) {
-      Log.e("TaskUtil", "Error occurred while deleting file: " + e.getMessage(), e);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Error occurred during delFileSh operation", e);
     }
   }
 
   private static void delFile(File file) {
     if (file == null || !file.exists()) {
-      Log.e("TaskUtil", "File does not exist or is null.");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "File does not exist or is null.", null);
       return;
     }
 
@@ -331,16 +371,16 @@ public class TaskUtil {
       Log.i("TaskUtil", "Deleting file: " + file.getName());
       ShellUtils.execRootCmd(cmd);
     } catch (Exception e) {
-      Log.e("TaskUtil", "Error occurred while deleting file: " + file, e);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Error occurred during delFile operation", e);
       throw new RuntimeException("File deletion failed", e);
     }
   }
 
   private static void compressToZip(File src, File dst) throws IOException {
-    Log.d("TaskUtil", "Starting to compress the APK directory...");
+    Log.d("TaskUtil", "Starting to compress single file...");
 
-    if (!src.exists() || !src.isDirectory()) {
-      throw new IOException("Source path does not exist or is not a directory: " + src.getAbsolutePath());
+    if (!src.exists() || !src.isFile()) {
+      throw new IOException("Source file does not exist or is not a valid file: " + src.getAbsolutePath());
     }
     if (dst.exists()) {
       throw new IOException("Destination ZIP file already exists: " + dst.getAbsolutePath());
@@ -350,11 +390,24 @@ public class TaskUtil {
     }
 
     try (FileOutputStream fos = new FileOutputStream(dst);
-        ZipOutputStream zipOut = new ZipOutputStream(fos)) {
-      addDirToZip(src, "", zipOut);
-      Log.i("TaskUtil", "Directory successfully compressed to ZIP: " + dst.getName());
+        ZipOutputStream zipOut = new ZipOutputStream(fos);
+        FileInputStream fis = new FileInputStream(src)) {
+
+      String zipEntryName = src.getName();
+      zipOut.putNextEntry(new ZipEntry(zipEntryName));
+
+      Log.d("TaskUtil", "Adding file to ZIP: " + zipEntryName);
+
+      byte[] buffer = new byte[4096];
+      int bytesRead;
+      while ((bytesRead = fis.read(buffer)) >= 0) {
+        zipOut.write(buffer, 0, bytesRead);
+      }
+
+      zipOut.closeEntry();
+      Log.i("TaskUtil", "File successfully compressed to ZIP: " + dst.getName());
     } catch (IOException e) {
-      Log.e("TaskUtil", "Error during directory compression", e);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Error during file compression", e);
       throw e;
     }
   }
@@ -403,87 +456,81 @@ public class TaskUtil {
         throw new IOException("Shell command execution failed: " + result);
       }
     } catch (Exception e) {
-      Log.e("TaskUtil", "Error in zipSh", e);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Error in zipSh", e);
     }
   }
 
-  public static void unZip(File destinationDir, File zipFile) {
+  public static void unZip(File destFile, File zipFile) {
     Log.d("TaskUtil", "unZip method called with parameters:");
-    Log.d("TaskUtil", "Destination directory: " + (destinationDir != null ? destinationDir.getAbsolutePath() : "null"));
+    Log.d("TaskUtil", "Destination file: " + (destFile != null ? destFile.getAbsolutePath() : "null"));
     Log.d("TaskUtil", "ZIP file: " + (zipFile != null ? zipFile.getAbsolutePath() : "null"));
 
     try {
       // 校验输入参数
-      if (destinationDir == null || zipFile == null) {
-        Log.e("TaskUtil", "Destination directory or ZIP file is null.");
-        throw new IllegalArgumentException("Destination directory or ZIP file cannot be null.");
+      if (destFile == null || zipFile == null) {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Destination file or ZIP file is null.", null);
+        throw new IllegalArgumentException("Destination file or ZIP file cannot be null.");
       }
 
       if (!zipFile.exists() || !zipFile.isFile()) {
-        Log.e("TaskUtil", "Invalid ZIP file: " + zipFile.getAbsolutePath());
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Invalid ZIP file: " + zipFile.getAbsolutePath(), null);
         throw new IllegalArgumentException("Invalid ZIP file: " + zipFile.getAbsolutePath());
       }
 
-      // 创建目标目录（如果不存在）
-      if (!destinationDir.exists()) {
-        boolean mkdirs = destinationDir.mkdirs();
-        Log.d("TaskUtil", "Destination directory created: " + mkdirs + ", Path: " + destinationDir.getAbsolutePath());
-        if (!mkdirs) {
-          Log.e("TaskUtil", "Failed to create destination directory: " + destinationDir.getAbsolutePath());
-          throw new IOException("Failed to create destination directory: " + destinationDir.getAbsolutePath());
-        }
-      } else {
-        Log.d("TaskUtil", "Destination directory already exists: " + destinationDir.getAbsolutePath());
+      if (destFile.exists()) {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Destination file already exists: " + destFile.getAbsolutePath(), null);
+        throw new IllegalArgumentException("Destination file already exists and cannot be overwritten: " + destFile.getAbsolutePath());
       }
 
-      // 使用Java自带的ZipInputStream解压文件
+      File parentDir = destFile.getParentFile();
+      if (!parentDir.exists()) {
+        boolean created = parentDir.mkdirs();
+        Log.d("TaskUtil", "Parent directory created: " + created + ", Path: " + parentDir.getAbsolutePath());
+        if (!created) {
+          throw new IOException("Failed to create parent directory: " + parentDir.getAbsolutePath());
+        }
+      }
+
+      // 使用 Java 自带的 ZipInputStream 解压文件
       try (FileInputStream fis = new FileInputStream(zipFile);
-          java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(fis)) {
+          java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(fis);
+          FileOutputStream fos = new FileOutputStream(destFile)) {
 
         Log.d("TaskUtil", "ZipInputStream opened for ZIP file: " + zipFile.getAbsolutePath());
-        java.util.zip.ZipEntry zipEntry;
-        while ((zipEntry = zis.getNextEntry()) != null) {
-          Log.d("TaskUtil", "Processing entry: " + zipEntry.getName());
-          File newFile = new File(destinationDir, zipEntry.getName());
 
-          // 检查目标文件路径是否合法，避免安全漏洞
-          if (!newFile.getCanonicalPath().startsWith(destinationDir.getCanonicalPath())) {
-            Log.e("TaskUtil", "Unzip entry is outside of the target directory: " + newFile.getAbsolutePath());
-            throw new IOException("Unzip entry is outside of the target directory: " + newFile.getAbsolutePath());
+        java.util.zip.ZipEntry zipEntry;
+        int extractedFiles = 0;
+        byte[] buffer = new byte[4096];
+        int length;
+
+        while ((zipEntry = zis.getNextEntry()) != null) {
+          if (extractedFiles > 0) {
+            throw new IOException("ZIP file contains more than one entry, expected exactly one: " + zipFile.getAbsolutePath());
           }
+
+          Log.d("TaskUtil", "Processing single entry: " + zipEntry.getName());
 
           if (zipEntry.isDirectory()) {
-            // 如果是目录，则创建目录
-            if (!newFile.exists() && newFile.mkdirs()) {
-              Log.d("TaskUtil", "Directory created: " + newFile.getAbsolutePath());
-            }
-          } else {
-            // 如果是文件，则写入文件
-            File parent = newFile.getParentFile();
-            if (!parent.exists()) {
-              boolean parentCreated = parent.mkdirs();
-              Log.d("TaskUtil", "Parent directory created: " + parentCreated + ", Path: " + parent.getAbsolutePath());
-              if (!parentCreated) {
-                Log.e("TaskUtil", "Failed to create parent directory: " + parent.getAbsolutePath());
-                throw new IOException("Failed to create parent directory: " + parent.getAbsolutePath());
-              }
-            }
-            try (FileOutputStream fos = new FileOutputStream(newFile)) {
-              Log.d("TaskUtil", "Writing to file: " + newFile.getAbsolutePath());
-              byte[] buffer = new byte[4096];
-              int length;
-              while ((length = zis.read(buffer)) > 0) {
-                fos.write(buffer, 0, length);
-              }
-            }
-            Log.d("TaskUtil", "File written successfully: " + newFile.getAbsolutePath());
+            LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil",
+                "ZIP file entry is a directory but only a single file can be extracted: " + zipEntry.getName(), null);
+            throw new IOException("ZIP file entry is a directory: " + zipEntry.getName());
           }
+
+          while ((length = zis.read(buffer)) > 0) {
+            fos.write(buffer, 0, length);
+          }
+          extractedFiles++;
           zis.closeEntry();
         }
+
+        if (extractedFiles == 0) {
+          throw new IOException("ZIP file does not contain entries to extract: " + zipFile.getAbsolutePath());
+        }
+
+        Log.i("TaskUtil", "Unzip successful. Extracted file to: " + destFile.getAbsolutePath());
       }
-      Log.i("TaskUtil", "Unzip successful. Extracted to: " + destinationDir.getAbsolutePath());
     } catch (Exception e) {
-      Log.e("TaskUtil", "Error in unZip method", e);
+      LogFileUtil.logAndWrite(Log.ERROR, "TaskUtil", "Error in unZip method", e);
     }
   }
 
@@ -516,13 +563,13 @@ public class TaskUtil {
 
       // 检查返回结果
       if (result == null || result.contains("error")) {
-        Log.e("TaskUtil", "Shell command execution failed: " + result);
+        LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "Shell command execution failed: " + result,null);
         throw new IOException("Shell command failed. Result: " + result);
       }
 
       Log.i("TaskUtil", "Unzip successful. Extracted to: " + destinationDir.getAbsolutePath());
     } catch (Exception e) {
-      Log.e("TaskUtil", "Error in unzipSh", e);
+      LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "Error in unzipSh", e);
     }
   }
 
@@ -553,7 +600,7 @@ public class TaskUtil {
         }
       }
     } catch (IOException e) {
-      Log.e("TaskUtil", "File upload failed", e);
+      LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "File upload failed", e);
       throw e;
     }
   }
@@ -604,17 +651,17 @@ public class TaskUtil {
         if (response.body() != null) {
           try {
             String responseBody = response.body().string();
-            Log.e("TaskUtil", "Response body: " + responseBody);
+            LogFileUtil.logAndWrite(Log.INFO,"TaskUtil", "Response body: " + responseBody,null);
           } catch (IOException e) {
-            Log.e("TaskUtil", "Failed to read response body for logging", e);
+            LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "Failed to read response body for logging", e);
           }
         } else {
-          Log.e("TaskUtil", "Response body is null");
+          LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "Response body is null", null);
         }
         return null;
       }
     } catch (IOException e) {
-      Log.e("TaskUtil", "Error during file download. Exception: " + e.getMessage(), e);
+      LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "Error during file download", e);
       return null;
     }
   }
@@ -653,7 +700,7 @@ public class TaskUtil {
           String errorMessage = "Unexpected response: Code=" + response.code() +
               ", Message=" + response.message() +
               ", URL=" + url.toString();
-          Log.e("TaskUtil", errorMessage);
+          LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", errorMessage, null);
           throw new IOException(errorMessage);
         }
 
@@ -680,62 +727,22 @@ public class TaskUtil {
           }
         } else {
           String errorMessage = "Response body is null for URL=" + url.toString();
-          Log.e("TaskUtil", errorMessage);
+          LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", errorMessage, null);
           throw new IOException(errorMessage);
         }
       }
     } catch (IOException e) {
-      Log.e("TaskUtil", "Error during getPackageInfo request", e);
+      LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "Error during getPackageInfo request", e);
     }
 
     return null; // 如果出错，返回null
   }
 
-  private static void infoDownload(String androidId) {
-    // 下载压缩包
-    HttpUrl url = HttpUrl.parse(BASE_URL + "/tar_info_download")
-        .newBuilder()
-        .addQueryParameter("file_name", "test")
-        .build();
-
-    Request request = new Request.Builder()
-        .url(url)
-        .get()
-        .build();
-
-    okHttpClient.newCall(request).enqueue(new Callback() {
-      @Override
-      public void onFailure(@NotNull Call call, @NotNull IOException e) {
-        e.printStackTrace();
-      }
-
-      @Override
-      public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-        if (response.isSuccessful()) {
-          byte[] fileBytes = response.body().bytes();
-          String savePath = "/storage/emulated/0/Download/test.zip";
-
-          File file = new File(savePath);
-          file.getParentFile().mkdirs();
-
-          try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(fileBytes);
-            System.out.println("File saved to " + savePath);
-          } catch (IOException e) {
-            e.printStackTrace();
-          }
-        } else {
-          System.out.println("Download failed: " + response.message());
-        }
-      }
-    });
+  public static String execQueryTask(String androidId,String taskId) {
+    return getDeviceInfoSync(androidId,taskId);
   }
 
-  public static String execQueryTask(String androidId) {
-    return getDeviceInfoSync(androidId);
-  }
-
-  public static void execSaveTask(Context context, String androidId, String taskId) {
+  public static void execSaveTask(Context context, String androidId, String taskId,String packName) {
     if (context == null) {
       throw new IllegalArgumentException("Context or Package name cannot be null or empty");
     }
@@ -746,7 +753,7 @@ public class TaskUtil {
     }
 
     try {
-      postDeviceInfo(androidId, taskId);
+      postDeviceInfo(androidId, taskId,packName);
     } catch (Exception e) {
       System.err.println("Error in execReloginTask: " + e.getMessage());
       e.printStackTrace();

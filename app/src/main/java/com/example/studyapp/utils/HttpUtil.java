@@ -50,6 +50,7 @@ public class HttpUtil {
                 errorResponse = byteArrayOutputStream.toString();
             }
             connection.disconnect();
+            LogFileUtil.logAndWrite(android.util.Log.ERROR, TAG, "HTTP request failed with code " + responseCode + ". Error: " + errorResponse,null);
             throw new IOException("HTTP request failed with code " + responseCode + ". Error: " + errorResponse);
         }
     }
@@ -99,7 +100,7 @@ public class HttpUtil {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LogFileUtil.logAndWrite(android.util.Log.ERROR, TAG, "Error getting local IP address", e);
         }
         return "0.0.0.0"; // 无法获取时返回默认值
     }

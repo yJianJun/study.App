@@ -1,8 +1,13 @@
 package com.example.studyapp.utils;
 
+import static java.security.AccessController.getContext;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 import java.io.File;
@@ -21,12 +26,24 @@ import java.util.concurrent.TimeUnit;
 
 public class ShellUtils {
 
+  public static String getPackagePath(Context context, String packageName) {
+    try {
+      PackageManager pm = context.getPackageManager();
+      ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
+      return appInfo.sourceDir; // 返回 APK 的完整路径
+    } catch (PackageManager.NameNotFoundException e) {
+      e.printStackTrace();
+      return "";
+    }
+  }
+
   public static void exec(String cmd) {
     try {
-      Log.e("ShellUtils", String.format("exec %s", cmd));
+      LogFileUtil.logAndWrite(Log.INFO, "ShellUtils", "Executing command: " + cmd, null);
       Process process = Runtime.getRuntime().exec(cmd);
       process.waitFor();
     } catch (Exception e) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Error executing command: " + e.getMessage(), e);
     }
   }
 
@@ -46,6 +63,7 @@ public class ShellUtils {
   public static boolean hasBin(String binName) {
     // 验证 binName 是否符合规则
     if (binName == null || binName.isEmpty()) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Invalid bin name",null);
       throw new IllegalArgumentException("Bin name cannot be null or empty");
     }
 
@@ -58,7 +76,7 @@ public class ShellUtils {
     // 获取 PATH 环境变量
     String pathEnv = System.getenv("PATH");
     if (pathEnv == null) {
-      Log.e("hasBin", "PATH environment variable is not available");
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "PATH environment variable is not available", null);
       return false;
     }
 
@@ -72,7 +90,7 @@ public class ShellUtils {
           return true;
         }
       } catch (SecurityException e) {
-        Log.e("hasBin", "Security exception occurred while checking: " + file.getAbsolutePath(), e);
+        LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Security exception occurred while checking: " + file.getAbsolutePath(), e);
       }
     }
 
@@ -83,7 +101,7 @@ public class ShellUtils {
   public static String execRootCmdAndGetResult(String cmd) {
     Log.d("ShellUtils", "execRootCmdAndGetResult - Started execution for command: " + cmd);
     if (cmd == null || cmd.trim().isEmpty()) {
-      Log.e("ShellUtils", "Unsafe or empty command. Aborting execution.");
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Unsafe or empty command. Aborting execution.", null);
       throw new IllegalArgumentException("Unsafe or empty command.");
     }
     // if (!isCommandSafe(cmd)) {  // 检查命令的合法性
@@ -121,10 +139,10 @@ public class ShellUtils {
           String line;
           try {
             while ((line = errorReader.readLine()) != null) {
-              Log.e("ShellUtils", "Shell Error: " + line);
+              LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Shell Error: " + line, null);
             }
           } catch (IOException e) {
-            Log.e("ShellUtils", "Error while reading process error stream: " + e.getMessage());
+            LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Error while reading process error stream: " + e.getMessage(), e);
           }
         });
 
@@ -144,7 +162,7 @@ public class ShellUtils {
         Log.d("ShellUtils", "Awaiting process termination...");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
           if (!process.waitFor(10, TimeUnit.SECONDS)) {
-            Log.e("ShellUtils", "Process execution timed out. Destroying process.");
+            LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Process execution timed out. Destroying process.", null);
             process.destroyForcibly();
             throw new RuntimeException("Shell command execution timeout.");
           }
@@ -157,7 +175,7 @@ public class ShellUtils {
               break;
             } catch (IllegalThreadStateException e) {
               if (System.currentTimeMillis() - startTime > 10000) { // 10 seconds
-                Log.e("ShellUtils", "Process execution timed out (manual tracking). Destroying process.");
+                LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Process execution timed out (manual tracking). Destroying process.", null);
                 process.destroy();
                 throw new RuntimeException("Shell command execution timeout.");
               }
@@ -170,7 +188,7 @@ public class ShellUtils {
         return output.toString().trim();
       }
     } catch (IOException | InterruptedException e) {
-      Log.e("ShellUtils", "Command execution failed: " + e.getMessage());
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Command execution failed: " + e.getMessage(), e);
       Thread.currentThread().interrupt();
       return "Error: " + e.getMessage();
     } finally {
@@ -186,7 +204,7 @@ public class ShellUtils {
   public static void execRootCmd(String cmd) {
     // 校验命令是否安全
     if (!isCommandSafe(cmd)) {
-      Log.e("ShellUtils", "Unsafe command, aborting.");
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Unsafe command, aborting.", null);
       return;
     }
     List<String> cmds = new ArrayList<>();
@@ -201,7 +219,7 @@ public class ShellUtils {
           Log.d("ShellUtils", "Command Result: " + result);
         }
       } catch (Exception e) {
-        Log.e("ShellUtils", "Unexpected error: ", e);
+        LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Unexpected error: " + e.getMessage(), e);
       }
     }
   }
@@ -210,13 +228,13 @@ public class ShellUtils {
   private static boolean isCommandSafe(String cmd) {
     // 检查空值和空字符串
     if (cmd == null || cmd.trim().isEmpty()) {
-      Log.e("ShellUtils", "Rejected command: empty or null value.");
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Rejected command: empty or null value.", null);
       return false;
     }
 
     // 检查非法字符
     if (!cmd.matches("^[a-zA-Z0-9._/:\\-~`'\" *|]+$")) {
-      Log.e("ShellUtils", "Rejected command due to illegal characters: " + cmd);
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Rejected command due to illegal characters: " + cmd, null);
       return false;
     }
 
@@ -224,23 +242,23 @@ public class ShellUtils {
     if (cmd.contains("&&") || cmd.contains("||")) {
       Log.d("ShellUtils", "Command contains logical operators.");
       if (!isExpectedMultiCommand(cmd)) {
-        Log.e("ShellUtils", "Rejected command due to prohibited structure: " + cmd);
+        LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Rejected command due to prohibited structure: " + cmd, null);
         return false;
       }
     }
 
     // 路径遍历保护
     if (cmd.contains("../") || cmd.contains("..\\")) {
-      Log.e("ShellUtils", "Rejected command due to path traversal attempt: " + cmd);
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Rejected command due to path traversal attempt: " + cmd, null);
       return false;
     }
 
     // 命令长度限制
     if (cmd.startsWith("tar") && cmd.length() > 800) { // 特定命令支持更长长度
-      Log.e("ShellUtils", "Rejected tar command due to excessive length: " + cmd.length());
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Command rejected due to excessive length.", null);
       return false;
     } else if (cmd.length() > 500) {
-      Log.e("ShellUtils", "Rejected command due to excessive length: " + cmd.length());
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Command rejected due to excessive length.", null);
       return false;
     }
 
@@ -275,7 +293,7 @@ public class ShellUtils {
             results.addAll(localResults);
           }
         } catch (IOException ioException) {
-          Log.e("ShellUtils", "Error reading stdout", ioException);
+          LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Error reading stdout", ioException);
         }
       });
 
@@ -284,10 +302,10 @@ public class ShellUtils {
         try (BufferedReader errReader = new BufferedReader(new InputStreamReader(finalProcess.getErrorStream()))) {
           String line;
           while ((line = errReader.readLine()) != null) {
-            Log.e("ShellUtils", "Stderr: " + line);
+            LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Stderr: " + line, null);
           }
         } catch (IOException ioException) {
-          Log.e("ShellUtils", "Error reading stderr", ioException);
+          LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Error reading stderr", ioException);
         }
       });
 
@@ -313,7 +331,7 @@ public class ShellUtils {
         process.waitFor();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt(); // 恢复中断
-        Log.e("ShellUtils", "Error executing commands", e);
+        LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Error executing commands", e);
       }
 
       // 等待子线程完成
@@ -321,10 +339,10 @@ public class ShellUtils {
       errThread.join();
 
     } catch (InterruptedIOException e) {
-      Log.e("ShellUtils", "Error reading stdout: Interrupted", e);
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Error reading stdout: Interrupted", e);
       Thread.currentThread().interrupt(); // 恢复线程的中断状态
     } catch (Exception e) {
-      Log.e("ShellUtils", "Error executing commands", e);
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Error executing commands", e);
     } finally {
       if (process != null) {
         process.destroy();
@@ -346,7 +364,7 @@ public class ShellUtils {
         }
       } catch (SecurityException e) {
         hasSecurityError = true;
-        Log.e("ShellUtils", "Security exception while checking: " + bin, e);
+        LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Security exception while checking: " + bin, e);
       }
     }
 
