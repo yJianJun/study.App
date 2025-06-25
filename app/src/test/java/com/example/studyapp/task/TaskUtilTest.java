@@ -131,7 +131,7 @@ public class TaskUtilTest {
 
     // 运行上传方法
     String taskId = "asddasdasd";
-    TaskUtil.postDeviceInfo("b3d893cf9de3a85a", taskId);
+    TaskUtil.postDeviceInfo("b3d893cf9de3a85a", taskId, "com.example.studyapp");
   }
 
   @Test

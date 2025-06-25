@@ -1,6 +1,5 @@
 package com.example.studyapp.autoJS;
 
-
 import static com.example.studyapp.MainActivity.taskLock;
 import static com.example.studyapp.task.TaskUtil.downloadCodeFile;
 
@@ -12,13 +11,12 @@ import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
 import com.example.studyapp.MainActivity;
-
+import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
 import java.io.File;
 
@@ -31,13 +29,14 @@ public class AutoJsUtil {
 
   public static void runAutojsScript(Context context) {
     // 检查脚本文件
-    Log.i("AutoJsUtil", "-------脚本运行开始：--------" + count++);
+    LogFileUtil.logAndWrite(android.util.Log.INFO, "AutoJsUtil", "-------脚本运行开始：--------" + count++,null);
     File scriptDir = new File(Environment.getExternalStorageDirectory(), "script");
-    scriptDir.delete();
-    File scriptFile = downloadCodeFile("main.js", scriptDir);
+    //scriptDir.delete();
+   // File scriptFile = downloadCodeFile("main.js", scriptDir);
+    File scriptFile = new File(scriptDir, "main.js");
     if (scriptFile == null || !scriptFile.exists()) {
       runOnUiThread(() -> Toast.makeText(context, "下载脚本文件失败", Toast.LENGTH_SHORT).show());
-      Log.e("AutoJsUtil", "下载脚本文件失败");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "AutoJsUtil", "下载脚本文件失败",null);
       return;
     }
 
@@ -54,44 +53,46 @@ public class AutoJsUtil {
     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     try {
       context.startActivity(intent);
-      flag = false;
-      Log.i("AutoJsUtil", "脚本运行中：" + scriptFile.getAbsolutePath());
+      LogFileUtil.logAndWrite(android.util.Log.INFO, "AutoJsUtil", "脚本运行中：" + scriptFile.getAbsolutePath(),null);
     } catch (Exception e) {
-      Log.e("AutoJsUtil", "运行脚本失败", e);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "AutoJsUtil", "运行脚本失败",e);
       runOnUiThread(() -> Toast.makeText(context, "运行脚本失败: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
-    // 注意：unregisterScriptResultReceiver 不应到此时立即调用
   }
 
   public static void registerScriptResultReceiver(Context context) {
-
     if (scriptResultReceiver == null) {
       // 创建广播接收器
       scriptResultReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-          Log.d("MainActivity", "----脚本运行结束通知一次------; 当前线程：" + Thread.currentThread().getName());
+          LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "----脚本运行结束通知一次------; 当前线程：" + Thread.currentThread().getName(), null);
           String scriptResult = intent.getStringExtra(SCRIPT_RESULT_KEY);
           synchronized (taskLock) {
-            AutoJsUtil.flag = true;
-            MainActivity.scriptResult = scriptResult;
-            taskLock.notifyAll(); // 唤醒任务线程
+            try {
+              MainActivity.scriptResultQueue.put(scriptResult); // 将结果加入队列
+              LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "----收到result------;" + scriptResult, null);
+              AutoJsUtil.flag = true; // 唤醒
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt(); // 处理中断
+            }
+            taskLock.notifyAll();
           }
         }
-
       };
+
       // 注册广播接收器
       try {
         IntentFilter filter = new IntentFilter(AUTOJS_SCRIPT_FINISHED_ACTION);
         Context appContext = context.getApplicationContext();
         ContextCompat.registerReceiver(appContext, scriptResultReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
-        Log.d("MainActivity", "广播接收器成功注册");
+        LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "广播接收器成功注册",null);
       } catch (Exception e) {
-        Log.e("MainActivity", "Failed to register receiver", e);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "MainActivity", "Failed to register receiver",e);
         scriptResultReceiver = null; // 确保状态一致
       }
     } else {
-      Log.w("MainActivity", "广播接收器已注册，无需重复注册");
+      LogFileUtil.logAndWrite(android.util.Log.WARN, "MainActivity", "广播接收器已注册，无需重复注册",null);
     }
   }
 
@@ -109,7 +110,7 @@ public class AutoJsUtil {
 
   // 检查目标应用是否安装
   public static boolean isAppInstalled(String packageName) {
-    Log.d("isAppInstalled", "Checking if app is installed: " + packageName);
+    LogFileUtil.logAndWrite(android.util.Log.DEBUG, "isAppInstalled", "Checking if app is installed: " + packageName,null);
 
     // 通过 Shell 命令实现检测
     try {
@@ -117,18 +118,17 @@ public class AutoJsUtil {
       String result = ShellUtils.execRootCmdAndGetResult(cmd);
 
       if (result != null && result.contains(packageName)) {
-        Log.d("isAppInstalled", "App is installed: " + packageName);
+        LogFileUtil.logAndWrite(android.util.Log.DEBUG, "isAppInstalled", "App is installed: " + packageName,null);
         return true;
       } else {
-        Log.w("isAppInstalled", "App not installed: " + packageName);
+        LogFileUtil.logAndWrite(android.util.Log.WARN, "isAppInstalled", "App not installed: " + packageName,null);
         return false;
       }
     } catch (Exception e) {
-      Log.e("isAppInstalled", "Unexpected exception while checking app installation: " + packageName, e);
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "isAppInstalled", "Unexpected exception while checking app installation: " + packageName,e);
       return false;
     }
   }
-
 
   private static final String AUTOJS_SCRIPT_FINISHED_ACTION = "org.autojs.SCRIPT_FINISHED";
   private static final String SCRIPT_RESULT_KEY = "result";
@@ -141,7 +141,7 @@ public class AutoJsUtil {
 
     // 检查目标活动是否存在
     boolean activityAvailable = isActivityAvailable(context, "org.autojs.autojs6", "org.autojs.autojs.external.open.StopServiceActivity");
-    Log.d("AutoJsUtil", "是否找到目标活动: " + activityAvailable);
+    LogFileUtil.logAndWrite(android.util.Log.DEBUG, "AutoJsUtil", "是否找到目标活动: " + activityAvailable,null);
 
     if (activityAvailable) {
       try {
@@ -149,11 +149,11 @@ public class AutoJsUtil {
         Toast.makeText(context, "脚本停止命令已发送", Toast.LENGTH_SHORT).show();
       } catch (Exception e) {
         Toast.makeText(context, "无法发送停止命令，请检查 AutoJs 配置", Toast.LENGTH_SHORT).show();
-        Log.e("AutoJsUtil", "发送停止命令时发生错误", e);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, "AutoJsUtil", "发送停止命令时发生错误",e);
       }
     } else {
       Toast.makeText(context, "目标活动未找到或已更改，请检查 AutoJs 配置", Toast.LENGTH_LONG).show();
-      Log.e("AutoJsUtil", "目标活动未找到: org.autojs.autojs.external.open.StopServiceActivity");
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, "AutoJsUtil", "目标活动未找到: org.autojs.autojs.external.open.StopServiceActivity",null);
     }
   }
 }

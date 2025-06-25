@@ -34,6 +34,7 @@ import com.example.studyapp.device.ChangeDeviceInfoUtil;
 import com.example.studyapp.proxy.ClashUtil;
 import com.example.studyapp.service.MyAccessibilityService;
 import com.example.studyapp.task.TaskUtil;
+import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
    */
   private String getAndroidId(Context context) {
     if (context == null) {
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Context cannot be null",null);
       throw new IllegalArgumentException("Context cannot be null");
     }
     try {
@@ -100,26 +102,27 @@ public class MainActivity extends AppCompatActivity {
           Settings.Secure.ANDROID_ID
       );
     } catch (Exception e) {
-      Log.e("MainActivity", "getAndroidId: Failed to get ANDROID_ID", e);
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Failed to get ANDROID_ID",e);
       return null;
     }
   }
+
 
   private static final int REQUEST_CODE_PERMISSIONS = 100;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    LogFileUtil.initialize(this);
     setContentView(R.layout.activity_main);
     instance = new WeakReference<>(this);
 
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Initializing application",null);
     initializeExecutorService();
     System.setProperty("java.library.path", this.getApplicationInfo().nativeLibraryDir);
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-      // 针对 Android 10 或更低版本检查普通存储权限
       if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-          != PackageManager.PERMISSION_GRANTED
-      ) {
+          != PackageManager.PERMISSION_GRANTED) {
         ActivityCompat.requestPermissions(
             this,
             new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
@@ -127,39 +130,29 @@ public class MainActivity extends AppCompatActivity {
         );
       }
     } else {
-      // 针对 Android 11 及更高版本检查全文件管理权限
       if (!Environment.isExternalStorageManager()) {
-        // 请求权限
         Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
         intent.setData(Uri.parse("package:" + getPackageName()));
         startActivityForResult(intent, ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE);
       }
     }
-    // 添加对 FOREGROUND_SERVICE 权限的检查和请求
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // 判断 Android 13+
-      String[] requiredPermissions = {
-          android.Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION,
-          "android.permission.CAPTURE_VIDEO_OUTPUT"
-      };
-      ActivityCompat.requestPermissions(this, requiredPermissions, REQUEST_CODE_PERMISSIONS);
-    } else {
-      Toast.makeText(this, "当前设备不支持这些权限", Toast.LENGTH_SHORT).show();
-    }
-
     if (!isNetworkAvailable(this)) {
       Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "Network not available, closing app.",null);
       finish();
     }
 
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Setting up work manager",null);
     PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(CheckAccessibilityWorker.class, 15, TimeUnit.MINUTES)
         .build();
     WorkManager.getInstance(this).enqueue(workRequest);
 
-    // 初始化按钮
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Setting up UI components",null);
     Button runScriptButton = findViewById(R.id.run_script_button);
     if (runScriptButton != null) {
       runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
     } else {
+      LogFileUtil.logAndWrite(Log.WARN, "MainActivity", "Run Script Button not found",null);
       Toast.makeText(this, "Button not found", Toast.LENGTH_SHORT).show();
     }
 
@@ -228,79 +221,85 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void executeLogic(String androidId,String taskId) {
-    Log.i("MainActivity", "executeLogic: Start execution");
+  private void executeLogic(String androidId, String taskId) {
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeLogic: Start execution",null);
 
     if (!isNetworkAvailable(this)) {
-      Log.e("MainActivity", "executeLogic: Network is not available!");
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "executeLogic: Network is not available!",null);
       Toast.makeText(this, "网络不可用，请检查网络连接", Toast.LENGTH_SHORT).show();
       return;
     }
-    Log.i("MainActivity", "executeLogic: Submitting job to executor");
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeLogic: Submitting job to executor",null);
     initializeExecutorService();
     executorService.submit(() -> {
       try {
         AutoJsUtil.registerScriptResultReceiver(this);
-        AutoJsUtil.flag = true; // 广播状态更新
+        AutoJsUtil.flag = true;
 
-        while (true) {
+        while (isRunning) {
           synchronized (taskLock) {
-            while (!AutoJsUtil.flag) {
+            while (!AutoJsUtil.flag && isRunning) {
               taskLock.wait(30000);
             }
+            if (!isRunning) break;
+
+            // 从队列中获取最新的 scriptResult
+            String currentScriptResult = scriptResultQueue.take();
+            ChangeDeviceInfoUtil.getDeviceInfo(taskId, androidId);
             executeSingleLogic();
-            TaskUtil.execSaveTask(this, androidId,taskId);
-            if (scriptResult != null && !TextUtils.isEmpty(scriptResult)) {
-              infoUpload(this, androidId, scriptResult);
+            TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult);
+            LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "----发送result------;" + currentScriptResult, null);
+            if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {
+              infoUpload(this, androidId, currentScriptResult);
             }
+
+            AutoJsUtil.flag = false;
           }
         }
       } catch (InterruptedException e) {
-        Log.e("MainActivity", "executeLogic: Thread interrupted while waiting", e);
+        Thread.currentThread().interrupt();
+        LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "executeLogic: Thread interrupted while waiting", e);
       } catch (Exception e) {
-        Log.e("MainActivity", "executeLogic: Unexpected task error.", e);
+        LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "executeLogic: Unexpected task error.", e);
       }
     });
   }
 
+  public static final LinkedBlockingQueue<String> scriptResultQueue = new LinkedBlockingQueue<>();
+  private volatile boolean isRunning = true; // 主线程运行状态
   public static final Object taskLock = new Object();      // 任务逻辑锁
 
   public void executeSingleLogic() {
-
-    Log.i("MainActivity", "executeSingleLogic: Proxy not active, starting VPN");
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Proxy not active, starting VPN",null);
     startProxyVpn(this);
 
-    try {
-      ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
-    } catch (Exception e) {
-      Log.e("MainActivity", "executeSingleLogic: Failed to switch proxy group", e);
-      runOnUiThread(() -> Toast.makeText(this, "切换代理组失败：" + e.getMessage(), Toast.LENGTH_SHORT).show());
-    }
-
-    Log.i("MainActivity", "executeSingleLogic: Changing device info");
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Changing device info",null);
     ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
 
-    Log.i("MainActivity", "executeSingleLogic: Running AutoJs script");
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script",null);
     AutoJsUtil.runAutojsScript(this);
   }
+
 
   private void startProxyVpn(Context context) {
     if (!isNetworkAvailable(context)) {
       Toast.makeText(context, "Network is not available", Toast.LENGTH_SHORT).show();
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Network is not available.",null);
       return;
     }
 
     if (!(context instanceof Activity)) {
       Toast.makeText(context, "Context must be an Activity", Toast.LENGTH_SHORT).show();
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Context is not an Activity.",null);
       return;
     }
 
     try {
       ClashUtil.startProxy(context); // 在主线程中调用
-    } catch (IllegalStateException e) {
-      Toast.makeText(context, "Failed to start VPN: VPN Service illegal state", Toast.LENGTH_SHORT).show();
+      ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
     } catch (Exception e) {
-      Toast.makeText(context, "Failed to start VPN: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Failed In VPN",e);
+      Toast.makeText(context, "Failed In VPN: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
     }
   }
 
@@ -377,13 +376,19 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   protected void onDestroy() {
+    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onDestroy: Cleaning up resources",null);
     super.onDestroy();
     instance.clear();
     if (AutoJsUtil.scriptResultReceiver != null) {
       unregisterReceiver(AutoJsUtil.scriptResultReceiver);
+      AutoJsUtil.scriptResultReceiver = null;
     }
     if (executorService != null) {
-      executorService.shutdown(); // 关闭线程池
+      executorService.shutdown();
+    }
+    isRunning = false;
+    synchronized (taskLock) {
+      taskLock.notifyAll();
     }
   }
 

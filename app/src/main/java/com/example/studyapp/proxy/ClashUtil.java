@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 import androidx.core.content.ContextCompat;
+import com.example.studyapp.utils.LogFileUtil;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import okhttp3.Call;
@@ -57,7 +58,7 @@ public class ClashUtil {
       checkClashStatus(context, latch);
       latch.await(); // 等待广播接收器更新状态
     } catch (InterruptedException e) {
-      Log.e("ClashUtil", "checkProxy: Waiting interrupted", e);
+      LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "checkProxy: Waiting interrupted", e);
       Thread.currentThread().interrupt(); // 重新设置中断状态
       return false; // 返回默认状态或尝试重试
     }
@@ -85,9 +86,11 @@ public class ClashUtil {
 
   public static void switchProxyGroup(String groupName, String proxyName, String controllerUrl) {
     if (groupName == null || groupName.trim().isEmpty() || proxyName == null || proxyName.trim().isEmpty()) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Invalid arguments", null);
       throw new IllegalArgumentException("Group name and proxy name must not be empty");
     }
     if (controllerUrl == null || !controllerUrl.matches("^https?://.*")) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Invalid controller URL", null);
       throw new IllegalArgumentException("Invalid controller URL");
     }
 
@@ -96,7 +99,7 @@ public class ClashUtil {
     try {
       json.put("name", proxyName);
     } catch (JSONException e) {
-      e.printStackTrace();
+      LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: JSON error", e);
     }
     String jsonBody = json.toString();
 
@@ -116,7 +119,7 @@ public class ClashUtil {
     client.newCall(request).enqueue(new Callback() {
       @Override
       public void onFailure(Call call, IOException e) {
-        e.printStackTrace();
+        LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Failed to switch proxy", e);
         System.out.println("Failed to switch proxy: " + e.getMessage());
       }
 
@@ -124,9 +127,9 @@ public class ClashUtil {
       public void onResponse(Call call, Response response) throws IOException {
         try {
           if (response.body() != null) {
-            System.out.println("Switch proxy response: " + response.body().string());
+            LogFileUtil.logAndWrite(Log.INFO, "ClashUtil", "switchProxyGroup: Switch proxy response", null);
           } else {
-            System.out.println("Response body is null");
+            LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Response body is null", null);
           }
         } finally {
           response.close();

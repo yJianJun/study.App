@@ -2,6 +2,7 @@ package com.example.studyapp.config;
 
 import android.content.Context;
 
+import com.example.studyapp.utils.LogFileUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,10 +39,10 @@ public class ConfigLoader {
             JSONObject jsonObject = new JSONObject(jsonStr);
             return jsonObject.optString("tun_address", "172.19.0.1");
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            LogFileUtil.writeLogToFile("ERROR", "ConfigLoader", "File not found: " + e.getMessage());
             return "172.19.0.1";
         } catch (IOException | JSONException e) {
-            e.printStackTrace();
+            LogFileUtil.writeLogToFile("ERROR", "ConfigLoader", "Error reading file: " + e.getMessage());
             return "172.19.0.1";
         }
     }

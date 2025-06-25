@@ -91,7 +91,7 @@ public class ReflectionHelper {
 				fld.setAccessible(true);
 			return fld;
 		} catch (Exception e) {
-			android.util.Log.e("Error", "Exception occurred", e);
+			LogFileUtil.logAndWrite(android.util.Log.ERROR, "ReflectionHelper", "Error",e);
 			return null;
 		}
 	}

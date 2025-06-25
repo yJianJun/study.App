@@ -1,6 +1,7 @@
 package com.example.studyapp.device;
 
 import static com.example.studyapp.autoJS.AutoJsUtil.isAppInstalled;
+import static com.example.studyapp.utils.LogFileUtil.logAndWrite;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -12,6 +13,7 @@ import com.example.studyapp.task.BigoInfo;
 import com.example.studyapp.task.DeviceInfo;
 import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.utils.HttpUtil;
+import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
 
 import java.io.File;
@@ -52,85 +54,178 @@ public class ChangeDeviceInfoUtil {
   private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
   public static void initialize(String country, int tag, Context context, String androidId) {
-    Log.d("TaskUtil", "initialize method called with parameters:");
-    Log.d("TaskUtil", "Country: " + country + ", Tag: " + tag + ", Android ID: " + androidId);
-    Log.d("TaskUtil", "Context instance: " + (context != null ? context.getClass().getSimpleName() : "null"));
+    LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Initializing device info...", null);
 
     executorService.submit(() -> {
       try {
-        Log.d("TaskUtil", "Starting network requests...");
+        LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Starting network requests...", null);
+        String bigoJson = fetchJsonSafely(buildBigoUrl(country, tag), "bigoJson");
+        String afJson = fetchJsonSafely(buildAfUrl(country, tag), "afJson");
 
-        // 发起网络请求
-        String bigoJson = HttpUtil.requestGet(buildBigoUrl(country, tag));
-        Log.d("TaskUtil", "Received bigoJson: " + bigoJson);
+        fallBackToNetworkData(bigoJson, afJson);
 
-        String afJson = HttpUtil.requestGet(buildAfUrl(country, tag));
-        Log.d("TaskUtil", "Received afJson: " + afJson);
+        logDeviceObjects();
+        processPackageInfo(TaskUtil.getPackageInfo(androidId), context);
 
-        String response = executeQuerySafely(androidId);
-        Log.d("TaskUtil", "Response from executeQuerySafely: " + response);
-
-        // 解析 JSON
-        if (response != null && !response.isBlank() && !response.equals("{}\n")) {
-          Log.d("TaskUtil", "Parsing existing response JSON...");
-          JSONObject responseJson = new JSONObject(response);
-          bigoDeviceObject = responseJson.optJSONObject("bigoDeviceObject");
-          afDeviceObject = responseJson.optJSONObject("afDeviceObject");
-          Log.d("TaskUtil", "Parsed bigoDeviceObject: " + bigoDeviceObject);
-          Log.d("TaskUtil", "Parsed afDeviceObject: " + afDeviceObject);
-        } else {
-          Log.d("TaskUtil", "Fallback to parsing bigoJson and afJson...");
-          bigoDeviceObject = new JSONObject(bigoJson).optJSONObject("device");
-          afDeviceObject = new JSONObject(afJson).optJSONObject("device");
-          Log.d("TaskUtil", "Fallback bigoDeviceObject: " + bigoDeviceObject);
-          Log.d("TaskUtil", "Fallback afDeviceObject: " + afDeviceObject);
-        }
-
-        // 输出结果
-        Log.i("TaskUtil", "Final bigoDeviceObject: " + bigoDeviceObject);
-        Log.i("TaskUtil", "Final afDeviceObject: " + afDeviceObject);
-
-        // 获取包信息
-        Log.d("TaskUtil", "Fetching package info...");
-        Map<String, String> packageInfo = TaskUtil.getPackageInfo(androidId);
-        Log.d("TaskUtil", "Package info retrieved: " + packageInfo);
-
-        // 遍历包信息并执行逻辑
-        if (packageInfo != null) {
-          for (String packAgeName : packageInfo.keySet()) {
-            Log.d("TaskUtil", "Processing package: " + packAgeName);
-            if (isAppInstalled(packAgeName)) {
-              Log.d("TaskUtil", "Package installed: " + packAgeName);
-
-              File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
-              Log.d("TaskUtil", "Files directory: " + filesDir.getAbsolutePath());
-
-              File file = TaskUtil.downloadCodeFile(packageInfo.get(packAgeName), filesDir);
-              if (file != null && file.exists()) {
-                Log.d("TaskUtil", "File downloaded: " + file.getAbsolutePath());
-                File destDir = new File("/storage/emulated/0/Android/data/" + packAgeName);
-                Log.d("TaskUtil", "Unzipping to destination: " + destDir.getAbsolutePath());
-
-                TaskUtil.unZip(destDir, file);
-                Log.d("TaskUtil", "Unzip completed. Deleting file: " + file.getAbsolutePath());
-
-                TaskUtil.delFileSh(file.getAbsolutePath());
-                Log.d("TaskUtil", "Temporary file deleted: " + file.getAbsolutePath());
-              } else {
-                Log.w("TaskUtil", "File download failed or file does not exist for package: " + packAgeName);
-              }
-            } else {
-              Log.w("TaskUtil", "Package not installed: " + packAgeName);
-            }
-          }
-        }
       } catch (IOException | JSONException e) {
-        Log.e("TaskUtil", "Error occurred during initialization", e);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during initialization", e);
       } catch (Exception e) {
-        Log.e("TaskUtil", "Unexpected error occurred", e);
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during initialization", e);
       }
     });
   }
+
+  public static void getDeviceInfo(String taskId, String androidId) {
+    if (taskId == null || androidId == null || taskId.isBlank() || androidId.isBlank()) {
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Invalid task",null);
+      return;
+    }
+
+    executorService.submit(() -> {
+      String response = executeQuerySafely(androidId, taskId);
+      if (response == null || response.isBlank()) {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query", null);
+        return;
+      }
+
+      if (isValidResponse(response)) {
+        try {
+          synchronized (ChangeDeviceInfoUtil.class) { // 防止并发访问
+            parseAndSetDeviceObjects(response);
+          }
+        } catch (JSONException e) {
+          LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error parsing JSON", e);
+        }
+      } else {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query",null);
+      }
+    });
+  }
+
+  private static String fetchJsonSafely(String url, String logKey) throws IOException {
+    String json = null;
+    try {
+      json = HttpUtil.requestGet(url);
+      if (json != null && !json.isEmpty()) {
+        LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Received " + logKey + ": " + json, null);
+        return json;
+      } else {
+        LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "Empty or null response for: " + logKey + ", retrying...", null);
+      }
+    } catch (IOException e) {
+      LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "Error fetching " + logKey + ": " + e.getMessage() + ", retrying...", e);
+    }
+
+    // Retry once if the initial attempt failed
+    json = HttpUtil.requestGet(url);
+    if (json != null && !json.isEmpty()) {
+      LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Retry success for " + logKey + ": " + json, null);
+      return json;
+    } else {
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Retry failed for " + logKey + ", response is still null or empty.", null);
+      throw new IOException("Failed to fetch valid JSON for " + logKey);
+    }
+  }
+
+  private static boolean isValidResponse(String response) {
+    return response != null && !response.isBlank() && !response.equals("{}\n")
+        && !response.equals("{\"afDeviceObject\": null, \"bigoDeviceObject\": null, \"other\": null}")
+        && response.trim().startsWith("{");
+  }
+
+  private static void parseAndSetDeviceObjects(String response) throws JSONException {
+    String cleanJson = response.trim();
+    if (cleanJson.startsWith("\"") && cleanJson.endsWith("\"")) {
+      cleanJson = cleanJson.substring(1, cleanJson.length() - 1).replace("\\\"", "\"");
+    }
+    JSONObject responseJson = new JSONObject(cleanJson);
+    bigoDeviceObject = responseJson.optJSONObject("bigoDeviceObject");
+    afDeviceObject = responseJson.optJSONObject("afDeviceObject");
+  }
+
+  private static void fallBackToNetworkData(String bigoJson, String afJson) throws JSONException {
+    bigoDeviceObject = new JSONObject(bigoJson).optJSONObject("device");
+    afDeviceObject = new JSONObject(afJson).optJSONObject("device");
+  }
+
+  private static void logDeviceObjects() {
+    LogFileUtil.logAndWrite(android.util.Log.INFO, LOG_TAG, "Final bigoDeviceObject: " + bigoDeviceObject, null);
+    LogFileUtil.logAndWrite(android.util.Log.INFO, LOG_TAG, "Final DeviceInfo: " + afDeviceObject, null);
+  }
+
+  private static void processPackageInfo(Map<String, String> packageInfo, Context context) {
+    if (packageInfo != null) {
+      for (Map.Entry<String, String> entry : packageInfo.entrySet()) {
+        String packageName = entry.getKey();
+        if (!isAppInstalled(packageName)) {
+          processPackage(packageName, entry.getValue(), context);
+        } else {
+          LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "Package not installed: " + packageName, null);
+        }
+      }
+    }
+  }
+
+  private static void processPackage(String packageName, String zipName, Context context) {
+    try {
+      File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
+      File file = TaskUtil.downloadCodeFile(zipName, filesDir);
+
+      if (file != null && file.exists()) {
+        File destFile = new File(context.getCacheDir(), packageName+"_download"+".apk");
+        if (destFile.exists()) {
+          TaskUtil.delFileSh(destFile.getAbsolutePath());
+        }
+        TaskUtil.unZip(destFile, file);
+
+        if (destFile.exists()) {
+          installApk(destFile.getAbsolutePath());
+        }
+
+        TaskUtil.delFileSh(destFile.getAbsolutePath());
+        TaskUtil.delFileSh(file.getAbsolutePath());
+        LogFileUtil.logAndWrite(Log.DEBUG, LOG_TAG, "Processed package: " + packageName, null);
+      } else {
+        LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "File download failed for package: " + packageName, null);
+      }
+    } catch (Exception e) {
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error processing package: " + packageName, e);
+    }
+  }
+
+  public static boolean installApk(String apkFilePath) {
+    // 检查文件路径
+    if (apkFilePath == null || apkFilePath.trim().isEmpty()) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Invalid APK file path", null);
+      return false;
+    }
+
+    // 确保文件存在
+    File apkFile = new File(apkFilePath);
+    if (!apkFile.exists()) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "APK file not found: " + apkFilePath, null);
+      return false;
+    }
+
+    // 构造安装命令
+    String command = "pm install " + apkFilePath;
+
+    // 执行命令并获取结果
+    String result = ShellUtils.execRootCmdAndGetResult(command);
+    if (result != null && result.contains("Success")) {
+      Log.d("ShellUtils", "APK installed successfully!");
+      return true;
+    } else {
+      LogFileUtil.logAndWrite(Log.ERROR, "ShellUtils", "Failed to install APK. Result: " + result, null);
+      return false;
+    }
+  }
+
+
+  private static final String LOG_TAG = "TaskUtil";
+  private static final String INIT_LOG_TEMPLATE = "initialize method called with parameters: Country: %s, Tag: %d, Android ID: %s";
+  private static final String CONTEXT_LOG_TEMPLATE = "Context instance: %s";
+
 
   // 辅助方法：执行网络请求
   private static String fetchJson(String url) throws IOException {
@@ -138,8 +233,8 @@ public class ChangeDeviceInfoUtil {
   }
 
   // 辅助方法：执行任务
-  private static String executeQuerySafely(String androidId) {
-    return TaskUtil.execQueryTask(androidId);
+  private static String executeQuerySafely(String androidId, String taskId) {
+    return TaskUtil.execQueryTask(androidId,taskId);
   }
 
 
@@ -211,7 +306,7 @@ public class ChangeDeviceInfoUtil {
         // **tz** (时区)
         callVCloudSettings_put(current_pkg_name + "_tz", tz, context);
       } catch (Throwable e) {
-        Log.e("ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
+        logAndWrite(android.util.Log.ERROR, "ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
         throw new RuntimeException("Error occurred in changeDeviceInfo", e);
       }
     }
@@ -341,7 +436,7 @@ public class ChangeDeviceInfoUtil {
         callVCloudSettings_put("screen.device.displayMetrics", displayMetrics.toString(), context);
 
         if (!ShellUtils.hasRootAccess()) {
-          Log.e("ChangeDeviceInfoUtil", "Root access is required to execute system property changes");
+          LogFileUtil.writeLogToFile("ERROR", "ChangeDeviceInfoUtil", "Root access is required to execute system property changes");
         }
         // 设置机型, 直接设置属性
         ShellUtils.execRootCmd("setprop ro.product.brand " + ro_product_brand);
@@ -370,7 +465,7 @@ public class ChangeDeviceInfoUtil {
         ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.egl_vendor " + persist_sys_cloud_gpu_egl_vendor);
         ShellUtils.execRootCmd("setprop persist.sys.cloud.gpu.egl_version " + persist_sys_cloud_gpu_egl_version);
       } catch (Throwable e) {
-        Log.e("ChangeDeviceInfoUtil", "Error occurred while changing device info", e);
+        logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Error occurred in changeDeviceInfo", e);
         throw new RuntimeException("Error occurred in changeDeviceInfo", e);
       }
     }
@@ -378,12 +473,15 @@ public class ChangeDeviceInfoUtil {
 
   private static void callVCloudSettings_put(String key, String value, Context context) {
     if (context == null) {
+      logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Context cannot be null", null);
       throw new IllegalArgumentException("Context cannot be null");
     }
     if (key == null || key.isEmpty()) {
+      logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Key cannot be null or empty", null);
       throw new IllegalArgumentException("Key cannot be null or empty");
     }
     if (value == null) {
+      logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Value cannot be null", null);
       throw new IllegalArgumentException("Value cannot be null");
     }
 
@@ -397,18 +495,18 @@ public class ChangeDeviceInfoUtil {
       putStringMethod.invoke(null, context.getContentResolver(), key, value);
       Log.d("Debug", "putString executed successfully.");
     } catch (ClassNotFoundException e) {
-      Log.w("Reflection Error", "Class not found: android.provider.VCloudSettings$Global. This may not be supported on this device.");
+      logAndWrite(Log.WARN, "ChangeDeviceInfoUtil", "Class not found: android.provider.VCloudSettings$Global. This may not be supported on this device.", e);
     } catch (NoSuchMethodException e) {
-      Log.w("Reflection Error", "Method putString not available. Ensure your taropt Android version supports it.");
+      logAndWrite(Log.WARN, "ChangeDeviceInfoUtil", "Method not found: android.provider.VCloudSettings$Global.putString. This may not be supported on this", e);
     } catch (InvocationTargetException e) {
       Throwable cause = e.getTargetException();
       if (cause instanceof SecurityException) {
-        Log.e("Reflection Error", "Permission denied. Ensure WRITE_SECURE_SETTINGS permission is granted.", cause);
+        logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Error occurred in changeDeviceInfo", cause);
       } else {
-        Log.e("Reflection Error", "InvocationTaroptException during putString invocation", e);
+        logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Error occurred in changeDeviceInfo", cause);
       }
     } catch (Exception e) {
-      Log.e("Reflection Error", "Unexpected error during putString invocation: " + e.getMessage());
+      logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Unexpected error during putString invocation", e);
     }
   }
 
@@ -416,11 +514,11 @@ public class ChangeDeviceInfoUtil {
     try {
       Native.setBootId("00000000000000000000000000000000");
     } catch (Exception e) {
-      Log.e("resetChangedDeviceInfo", "Failed to set boot ID", e);
+      logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Error occurred in reset", e);
     }
 
     if (!ShellUtils.hasRootAccess()) {
-      Log.e("resetChangedDeviceInfo", "Root privileges are required.");
+      LogFileUtil.logAndWrite(Log.ERROR, "ChangeDeviceInfoUtil", "Root access is required to execute system property changes", null);
       return;
     }
     ShellUtils.execRootCmd("cmd settings2 delete global global_android_id");
