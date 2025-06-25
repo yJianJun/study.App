@@ -1,0 +1,54 @@
+GET http://47.238.96.231:8112/get_package_info?androidId=b3d893cf9de3a85a
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-06-21T132008.200.json
+
+###
+
+GET http://47.238.96.231:8112/download_code_file?file_name=b3d893cf9de3a85a_bin.mt.plus.zip
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> b3d893cf9de3a85a_bin.mt.plus.zip
+
+###
+
+GET http://47.238.96.231:8112/download_code_file?file_name="b3d893cf9de3a85a_bin.mt.plus.zip"
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-06-21T124257.200.json
+
+###
+
+GET http://47.238.96.231:8112/get_package_info?androidId=b3d893cf9de3a85a
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-06-21T122848.200.json
+
+###
+
+GET http://47.238.96.231:8112/get_package_info?androidId=b3d893cf9de3a85a
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-06-21T115835.200.json
+
+###
+
+GET http://47.238.96.231:8112/get_package_info?androidId=b3d893cf9de3a85a
+User-Agent: IntelliJ HTTP Client/IntelliJ IDEA 2025.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-06-21T105829.200.json
+
+###
+
