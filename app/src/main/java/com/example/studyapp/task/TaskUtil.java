@@ -622,28 +622,7 @@ public class TaskUtil {
       if (response.isSuccessful() && response.body() != null) {
         Log.d("TaskUtil", "Response is successful. Preparing to save file."); // 记录成功响应
 
-        // 检查目录是否存在
-        if (!filesLocationDir.exists()) {
-          boolean dirCreated = filesLocationDir.mkdirs();
-          Log.d("TaskUtil", "Directory created: " + filesLocationDir.getAbsolutePath() + " - " + dirCreated);
-        }
-
-        File saveFile = new File(filesLocationDir, fileName);
-        Log.d("TaskUtil", "Target file path: " + saveFile.getAbsolutePath());
-
-        try (InputStream is = response.body().byteStream();
-            OutputStream os = new BufferedOutputStream(new FileOutputStream(saveFile))) {
-
-          Log.d("TaskUtil", "Starting to write file...");
-          byte[] buffer = new byte[8192];
-          int bytesRead;
-          while ((bytesRead = is.read(buffer)) != -1) {
-            os.write(buffer, 0, bytesRead);
-          }
-
-          Log.i("TaskUtil", "File saved successfully to: " + saveFile.getAbsolutePath());
-        }
-        return saveFile;
+        return saveDownloadedFile(response, filesLocationDir, fileName);
       } else {
         Log.w("TaskUtil", "Download failed. HTTP code: " + response.code() + ", Message: " + response.message());
 
@@ -663,6 +642,55 @@ public class TaskUtil {
     } catch (IOException e) {
       LogFileUtil.logAndWrite(Log.ERROR,"TaskUtil", "Error during file download", e);
       return null;
+    }
+  }
+
+  private static File saveDownloadedFile(Response response, File filesLocationDir, String fileName) throws IOException {
+    // 1. 更严格的目录检查和处理
+    if (!filesLocationDir.exists()) {
+      if (!filesLocationDir.mkdirs()) {
+        throw new IOException("Failed to create directory: " + filesLocationDir.getAbsolutePath());
+      }
+      Log.d("TaskUtil", "Directory created: " + filesLocationDir.getAbsolutePath());
+    }
+
+    // 2. 检查目录是否可写
+    if (!filesLocationDir.canWrite()) {
+      throw new IOException("Directory not writable: " + filesLocationDir.getAbsolutePath());
+    }
+
+    // 3. 处理文件名冲突
+    File saveFile = new File(filesLocationDir, fileName);
+    if (saveFile.exists()) {
+      saveFile.delete();
+    }
+
+    // 4. 更完善的写入流程
+    File tempFile = new File(filesLocationDir, fileName + ".tmp");
+    try (InputStream is = response.body().byteStream();
+         OutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile))) {
+
+      byte[] buffer = new byte[8192];
+      int bytesRead;
+      while ((bytesRead = is.read(buffer)) != -1) {
+        os.write(buffer, 0, bytesRead);
+      }
+
+      // 5. 原子性重命名（确保文件完整）
+      if (!tempFile.renameTo(saveFile)) {
+        throw new IOException("Failed to rename temp file to: " + saveFile.getAbsolutePath());
+      }
+
+      Log.i("TaskUtil", "File saved successfully to: " + saveFile.getAbsolutePath());
+      return saveFile;
+
+    } catch (IOException e) {
+      // 6. 清理不完整文件
+      if (tempFile.exists()) {
+        boolean deleted = tempFile.delete();
+        Log.w("TaskUtil", "Deleted incomplete file: " + deleted);
+      }
+      throw e;
     }
   }
 

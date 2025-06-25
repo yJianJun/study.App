@@ -32,7 +32,7 @@ public class AutoJsUtil {
     LogFileUtil.logAndWrite(android.util.Log.INFO, "AutoJsUtil", "-------脚本运行开始：--------" + count++,null);
     File scriptDir = new File(Environment.getExternalStorageDirectory(), "script");//todo
     scriptDir.delete();
-    File scriptFile = downloadCodeFile("main.js", scriptDir);//todo
+    File scriptFile = downloadCodeFile("mainold.js", scriptDir);//todo
     if (scriptFile == null || !scriptFile.exists()) {
       runOnUiThread(() -> Toast.makeText(context, "下载脚本文件失败", Toast.LENGTH_SHORT).show());
       LogFileUtil.logAndWrite(android.util.Log.ERROR, "AutoJsUtil", "下载脚本文件失败",null);

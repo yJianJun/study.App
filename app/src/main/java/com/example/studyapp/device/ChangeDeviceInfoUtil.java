@@ -89,21 +89,15 @@ public class ChangeDeviceInfoUtil {
       LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query", null);
       return false;
     }
-
-    if (isValidResponse(response)) {
       try {
         synchronized (ChangeDeviceInfoUtil.class) { // 防止并发访问
           parseAndSetDeviceObjects(response);
         }
         return true;
-      } catch (JSONException e) {
+      } catch (Exception e) {
         LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error parsing JSON", e);
         return false;
       }
-    } else {
-      LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query",null);
-      return false;
-    }
   }
 
   public static void getDeviceInfo(String taskId, String androidId) {
