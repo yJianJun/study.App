@@ -249,7 +249,7 @@ public class ChangeDeviceInfoUtil {
     }
 
     // 构造安装命令
-    String command = "pm install " + apkFilePath;
+    String command = "pm install-multiple " + apkFilePath;
 
     // 执行命令并获取结果
     String result = ShellUtils.execRootCmdAndGetResult(command);
