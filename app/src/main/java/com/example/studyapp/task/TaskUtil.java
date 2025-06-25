@@ -6,8 +6,11 @@ import android.content.Context;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.example.studyapp.utils.FileUtils;
 import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
+import com.example.studyapp.utils.ZipUtils;
 import com.google.android.gms.common.util.CollectionUtils;
 import com.google.android.gms.common.util.MapUtils;
 import com.google.gson.Gson;
@@ -224,11 +227,12 @@ public class TaskUtil {
     if (zipFile.exists()) {
       delFileSh(zipFile.getAbsolutePath());
     }
-    File copiedAPKFile = new File(context.getCacheDir(), packAge+"_upload.apk");
+    File copiedAPKFile = new File(context.getCacheDir(), packAge);
     if (copiedAPKFile.exists()) {
       delFileSh(copiedAPKFile.getAbsolutePath());
     }
-    copyFolderSh(apkSourceFile, copiedAPKFile.getAbsolutePath());
+    String parentPath = FileUtils.getParentDirectory(apkSourceFile);
+    copyFolderSh(parentPath, copiedAPKFile.getAbsolutePath());
     // boolean success = clearUpFileInDst(copiedDir);
     // if (success) {
     //   // 压缩APK文件
@@ -236,13 +240,21 @@ public class TaskUtil {
     // }
 
     // 压缩APK文件
-    compressToZip(copiedAPKFile, zipFile);
+//    compressToZip(copiedAPKFile, zipFile);
+    try {
+      ZipUtils.zipDirectory(copiedAPKFile.getAbsolutePath(), zipFile.getAbsolutePath());
+    }catch (Exception e){
+      zipFile.delete();
+      e.printStackTrace();
+    }
+    Log.e("TAG", "infoUpload compress finish: ");
     // 上传压缩文件
     if (!zipFile.exists()) {
       Log.w("TaskUtil", "Upload file does not exist: " + outputZipPath);
       return;
     }
-
+    String safeNewPath = zipFile.getAbsolutePath().replace(" ", "\\ ").replace("\"", "\\\"");
+    String chmod = "chmod 777 \"" + safeNewPath + "\"";
     uploadFile(zipFile);
 
     //uninstall
@@ -250,6 +262,7 @@ public class TaskUtil {
     String chmodResult = ShellUtils.execRootCmdAndGetResult(uninstall);
     // 清理临时文件
     delFileSh(copiedAPKFile.getAbsolutePath());
+    ShellUtils.execRootCmdAndGetResult(chmod);
     delFileSh(zipFile.getAbsolutePath());
   }
 
@@ -282,6 +295,7 @@ public class TaskUtil {
       String result = ShellUtils.execRootCmdAndGetResult(cmd);
       String chmod = "chmod 777 \"" + safeNewPath + "\"";
       String chmodResult = ShellUtils.execRootCmdAndGetResult(chmod);
+      recursiveChmod777(dst);
 //      if (!TextUtils.isEmpty(chmodResult)) {
         LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "chmodResult. Result: " + chmodResult, null);
 //        return false;
@@ -299,12 +313,37 @@ public class TaskUtil {
     }
   }
 
+  public static void recursiveChmod777(File dir) {
+    if (dir == null || !dir.exists()) {
+      Log.e("Chmod", "目录不存在或为null");
+      return;
+    }
+
+    // 先修改当前目录权限
+    String currentPath = dir.getAbsolutePath().replace(" ", "\\ ").replace("\"", "\\\"");
+    String chmodCmd = "chmod 777 \"" + currentPath + "\"";
+    ShellUtils.execRootCmdAndGetResult(chmodCmd);
+
+    // 递归处理子项
+    File[] children = dir.listFiles();
+    if (children != null) {
+      for (File child : children) {
+        if (child.isDirectory()) {
+          recursiveChmod777(child); // 递归处理子目录
+        } else {
+          String filePath = child.getAbsolutePath().replace(" ", "\\ ").replace("\"", "\\\"");
+          chmodCmd = "chmod 777 \"" + filePath + "\"";
+          ShellUtils.execRootCmdAndGetResult(chmodCmd);
+        }
+      }
+    }
+  }
+
   /**
    *在给定的目标目录中清除特定的文件和目录。
    *子目录未命名为“缓存”，并且删除了大于3 MB的文件。
    *记录保留的文件和目录的路径。
    *
-   * @param DST将处理其文件和子目录的目标目录
    * @return true如果目的目录存在并且已成功处理，则为false否则
    */
   private static boolean clearUpFileInDst(File dst) {

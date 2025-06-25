@@ -154,7 +154,18 @@ public class MainActivity extends AppCompatActivity {
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Setting up UI components",null);
     Button runScriptButton = findViewById(R.id.run_script_button);
     if (runScriptButton != null) {
-      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
+      runScriptButton.setOnClickListener(v -> {
+        initializeExecutorService();
+
+        executorService.submit(() -> {
+          try {
+            TaskUtil.infoUpload(MainActivity.this, getAndroidId(MainActivity.this), "wsj.reader_sp");
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        });
+      });
+//      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
     } else {
       LogFileUtil.logAndWrite(Log.WARN, "MainActivity", "Run Script Button not found",null);
       Toast.makeText(this, "Button not found", Toast.LENGTH_SHORT).show();
