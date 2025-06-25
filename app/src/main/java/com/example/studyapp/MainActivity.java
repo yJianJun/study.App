@@ -162,10 +162,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button connectButton = findViewById(R.id.connectVpnButton);
     if (connectButton != null) {
-      connectButton.setOnClickListener(v -> {
-        String chmodResult = ShellUtils.execRootCmdAndGetResult("pm uninstall com.rovio.baba");
-      });
-//      connectButton.setOnClickListener(v -> startProxyVpn(this));
+      connectButton.setOnClickListener(v -> startProxyVpn(this));
     } else {
       Toast.makeText(this, "Connect button not found", Toast.LENGTH_SHORT).show();
     }
