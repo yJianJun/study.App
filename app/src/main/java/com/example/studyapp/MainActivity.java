@@ -238,13 +238,12 @@ public class MainActivity extends AppCompatActivity {
 
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeLogic: Submitting job to executor",null);
     initializeExecutorService();
-    ChangeDeviceInfoUtil.getDeviceInfo(taskId, androidId);
-    executeSingleLogic();
     executorService.submit(() -> {
       try {
         AutoJsUtil.registerScriptResultReceiver(this);
         AutoJsUtil.flag = true;
-
+        ChangeDeviceInfoUtil.getDeviceInfo(taskId, androidId);
+        executeSingleLogic();
         while (isRunning) {
           if (!isRunning) break;
 
