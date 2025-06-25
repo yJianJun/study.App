@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
     // 初始化 ChangeDeviceInfoUtil
     String androidId = getAndroidId(this);
     String taskId = UUID.randomUUID().toString();
-    ChangeDeviceInfoUtil.initialize("US", 2, this, androidId);
+//    ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2);
     // 获取输入框和按钮
     Button executeButton = findViewById(R.id.execute_button);
     Button stopExecuteButton = findViewById(R.id.stop_execute_button);
@@ -238,6 +238,8 @@ public class MainActivity extends AppCompatActivity {
 
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeLogic: Submitting job to executor",null);
     initializeExecutorService();
+    ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2);
+    executeSingleLogic();
     executorService.submit(() -> {
       try {
         AutoJsUtil.registerScriptResultReceiver(this);
@@ -256,9 +258,9 @@ public class MainActivity extends AppCompatActivity {
 
           // 从队列中获取最新的 scriptResult
           LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script",null);
-          ChangeDeviceInfoUtil.getDeviceInfo(taskId, androidId);
-          executeSingleLogic();
           String currentScriptResult = scriptResultQueue.take();
+          ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2);
+          executeSingleLogic();
           TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult);
           LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "----发送result------;" + currentScriptResult, null);
           if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {

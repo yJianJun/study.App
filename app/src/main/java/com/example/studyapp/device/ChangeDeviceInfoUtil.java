@@ -75,6 +75,23 @@ public class ChangeDeviceInfoUtil {
     });
   }
 
+  public static void getAddDeviceInfo(String country, int tag){
+    LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Initializing device info...", null);
+    executorService.submit(() -> {
+      try {
+        LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Starting network requests...", null);
+        String bigoJson = fetchJsonSafely(buildBigoUrl(country, tag), "bigoJson");
+        String afJson = fetchJsonSafely(buildAfUrl(country, tag), "afJson");
+        fallBackToNetworkData(bigoJson, afJson);
+
+      } catch (IOException | JSONException e) {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during initialization", e);
+      } catch (Exception e) {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during initialization", e);
+      }
+    });
+  }
+
   public static void getDeviceInfo(String taskId, String androidId) {
     if (taskId == null || androidId == null || taskId.isBlank() || androidId.isBlank()) {
       LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Invalid task",null);
