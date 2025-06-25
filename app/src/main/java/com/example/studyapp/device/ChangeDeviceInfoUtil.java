@@ -34,6 +34,9 @@ public class ChangeDeviceInfoUtil {
 
   private static JSONObject afDeviceObject;
 
+  public static String packageName = "";
+  public static String zipName = "";
+
   public static String buildBigoUrl(String country, int tag) {
     return Uri.parse("http://8.217.137.25/tt/zj/dispatcher!bigo.do")
         .buildUpon()
@@ -73,6 +76,34 @@ public class ChangeDeviceInfoUtil {
         LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during initialization", e);
       }
     });
+  }
+
+  public static boolean getDeviceInfoSync(String taskId, String androidId){
+    String response = "";
+    try{
+      response = executeQuerySafely(androidId, taskId);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    if (response == null || response.isBlank()) {
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query", null);
+      return false;
+    }
+
+    if (isValidResponse(response)) {
+      try {
+        synchronized (ChangeDeviceInfoUtil.class) { // 防止并发访问
+          parseAndSetDeviceObjects(response);
+        }
+        return true;
+      } catch (JSONException e) {
+        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error parsing JSON", e);
+        return false;
+      }
+    } else {
+      LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query",null);
+      return false;
+    }
   }
 
   public static void getDeviceInfo(String taskId, String androidId) {
@@ -146,6 +177,8 @@ public class ChangeDeviceInfoUtil {
     JSONObject responseJson = new JSONObject(cleanJson);
     bigoDeviceObject = responseJson.optJSONObject("bigoDeviceObject");
     afDeviceObject = responseJson.optJSONObject("afDeviceObject");
+    packageName = responseJson.optString("package_name");
+    zipName = responseJson.optString("file_name");
   }
 
   private static void fallBackToNetworkData(String bigoJson, String afJson) throws JSONException {
@@ -168,6 +201,15 @@ public class ChangeDeviceInfoUtil {
           LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "Package not installed: " + packageName, null);
         }
       }
+    }
+  }
+
+  public static void processPackageInfoWithDeviceInfo(String packageName,String zipName, Context context, String androidId, String taskId) {
+    if (!isAppInstalled(packageName)) {
+      processPackage(packageName, zipName, context);
+      TaskUtil.postDeviceInfo(androidId, taskId, packageName);
+    } else {
+      LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "Package not installed: " + packageName, null);
     }
   }
 

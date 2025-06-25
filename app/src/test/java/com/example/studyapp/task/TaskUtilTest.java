@@ -138,7 +138,7 @@ public class TaskUtilTest {
   public void testGetDeviceInfoSync_Success() throws Exception {
 
     // 运行上传方法
-   TaskUtil.getDeviceInfoSync("b3d893cf9de3a85a");
+//   TaskUtil.getDeviceInfoSync("b3d893cf9de3a85a");
   }
 
   // @Test

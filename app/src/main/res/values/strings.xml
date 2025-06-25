@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">study_app</string>
+    <string name="app_name">Retention</string>
     <string name="accessibility_service_description">This is an accessibility service.</string>
 </resources>

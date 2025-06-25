@@ -1,6 +1,7 @@
 package com.example.studyapp;
 
 import static com.example.studyapp.task.TaskUtil.infoUpload;
+import static com.example.studyapp.utils.Utils.isNetworkAvailable;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -36,7 +37,9 @@ import com.example.studyapp.service.MyAccessibilityService;
 import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
+import com.example.studyapp.utils.Utils;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
+import com.example.studyapp.worker.LoadDeviceWorker;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -95,19 +98,20 @@ public class MainActivity extends AppCompatActivity {
    * @return 设备的 ANDROID_ID，若无法获取，则返回 null
    */
   private String getAndroidId(Context context) {
-    if (context == null) {
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Context cannot be null",null);
-      throw new IllegalArgumentException("Context cannot be null");
-    }
-    try {
-      return Settings.Secure.getString(
-          context.getContentResolver(),
-          Settings.Secure.ANDROID_ID
-      );
-    } catch (Exception e) {
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Failed to get ANDROID_ID",e);
-      return null;
-    }
+//    if (context == null) {
+//      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Context cannot be null",null);
+//      throw new IllegalArgumentException("Context cannot be null");
+//    }
+//    try {
+//      return Settings.Secure.getString(
+//          context.getContentResolver(),
+//          Settings.Secure.ANDROID_ID
+//      );
+//    } catch (Exception e) {
+//      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Failed to get ANDROID_ID",e);
+//      return null;
+//    }
+    return "FyZqWrStUvOpKlMn";
   }
 
 
@@ -153,7 +157,10 @@ public class MainActivity extends AppCompatActivity {
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Setting up UI components",null);
     Button runScriptButton = findViewById(R.id.run_script_button);
     if (runScriptButton != null) {
-      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
+//      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
+      runScriptButton.setOnClickListener(v -> {
+        Utils.writePackageName("com.test.app");
+      });
     } else {
       LogFileUtil.logAndWrite(Log.WARN, "MainActivity", "Run Script Button not found",null);
       Toast.makeText(this, "Button not found", Toast.LENGTH_SHORT).show();
@@ -210,7 +217,8 @@ public class MainActivity extends AppCompatActivity {
       executeButton.setOnClickListener(v -> {
         executeButton.setEnabled(false);
         Toast.makeText(this, "任务正在执行", Toast.LENGTH_SHORT).show();
-        executeLogic(androidId,taskId);
+//        executeLogic(androidId,taskId);
+        startLoadWork();
       });
     }
     if (stopExecuteButton != null) {
@@ -225,6 +233,12 @@ public class MainActivity extends AppCompatActivity {
     } else {
       Toast.makeText(this, "Stop button not found", Toast.LENGTH_SHORT).show();
     }
+  }
+
+  private void startLoadWork(){
+    PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(LoadDeviceWorker.class, 15, TimeUnit.MINUTES)
+            .setInitialDelay(0, TimeUnit.SECONDS).build();
+    WorkManager.getInstance(this).enqueue(workRequest);
   }
 
   private void executeLogic(String androidId, String taskId) {
@@ -392,18 +406,5 @@ public class MainActivity extends AppCompatActivity {
 
   public static MainActivity getInstance() {
     return instance.get(); // 返回实例
-  }
-
-  private boolean isNetworkAvailable(Context context) {
-    ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    if (connectivityManager != null) {
-      Network network = connectivityManager.getActiveNetwork();
-      if (network != null) {
-        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
-        return capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-      }
-    }
-    return false;
   }
 }
