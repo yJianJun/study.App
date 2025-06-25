@@ -95,19 +95,20 @@ public class MainActivity extends AppCompatActivity {
    * @return 设备的 ANDROID_ID，若无法获取，则返回 null
    */
   private String getAndroidId(Context context) {
-    if (context == null) {
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Context cannot be null",null);
-      throw new IllegalArgumentException("Context cannot be null");
-    }
-    try {
-      return Settings.Secure.getString(
-          context.getContentResolver(),
-          Settings.Secure.ANDROID_ID
-      );
-    } catch (Exception e) {
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Failed to get ANDROID_ID",e);
-      return null;
-    }
+//    if (context == null) {
+//      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Context cannot be null",null);
+//      throw new IllegalArgumentException("Context cannot be null");
+//    }
+//    try {
+//      return Settings.Secure.getString(
+//          context.getContentResolver(),
+//          Settings.Secure.ANDROID_ID
+//      );
+//    } catch (Exception e) {
+//      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Failed to get ANDROID_ID",e);
+//      return null;
+//    }
+    return "FyZqWrStUvOpKlMn";
   }
 
 
