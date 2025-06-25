@@ -238,10 +238,11 @@ public class MainActivity extends AppCompatActivity {
 
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeLogic: Submitting job to executor",null);
     initializeExecutorService();
-    ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2);
-    executeSingleLogic();
+
     executorService.submit(() -> {
       try {
+        ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2);
+        executeSingleLogic();
         AutoJsUtil.registerScriptResultReceiver(this);
         AutoJsUtil.flag = true;
 
@@ -266,6 +267,7 @@ public class MainActivity extends AppCompatActivity {
           if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {
             infoUpload(this, androidId, currentScriptResult);
           }
+          Thread.sleep(5000);
         }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
