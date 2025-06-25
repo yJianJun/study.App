@@ -158,7 +158,7 @@ public class ChangeDeviceInfoUtil {
     LogFileUtil.logAndWrite(android.util.Log.INFO, LOG_TAG, "Final DeviceInfo: " + afDeviceObject, null);
   }
 
-  private static void processPackageInfo(Map<String, String> packageInfo, Context context) {
+  public static void processPackageInfo(Map<String, String> packageInfo, Context context) {
     if (packageInfo != null) {
       for (Map.Entry<String, String> entry : packageInfo.entrySet()) {
         String packageName = entry.getKey();

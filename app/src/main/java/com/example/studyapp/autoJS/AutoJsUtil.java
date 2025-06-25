@@ -1,6 +1,5 @@
 package com.example.studyapp.autoJS;
 
-import static com.example.studyapp.MainActivity.taskLock;
 import static com.example.studyapp.task.TaskUtil.downloadCodeFile;
 
 import android.content.BroadcastReceiver;
@@ -18,6 +17,7 @@ import androidx.core.content.ContextCompat;
 import com.example.studyapp.MainActivity;
 import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
+
 import java.io.File;
 
 public class AutoJsUtil {
@@ -32,8 +32,7 @@ public class AutoJsUtil {
     LogFileUtil.logAndWrite(android.util.Log.INFO, "AutoJsUtil", "-------脚本运行开始：--------" + count++,null);
     File scriptDir = new File(Environment.getExternalStorageDirectory(), "script");//todo
     scriptDir.delete();
-//    File scriptFile = new File(scriptDir, "main.js");
-    File scriptFile = downloadCodeFile("main.js", scriptDir);
+    File scriptFile = downloadCodeFile("main.js", scriptDir);//todo
     if (scriptFile == null || !scriptFile.exists()) {
       runOnUiThread(() -> Toast.makeText(context, "下载脚本文件失败", Toast.LENGTH_SHORT).show());
       LogFileUtil.logAndWrite(android.util.Log.ERROR, "AutoJsUtil", "下载脚本文件失败",null);
@@ -128,7 +127,7 @@ public class AutoJsUtil {
     }
   }
 
-  private static final String AUTOJS_SCRIPT_FINISHED_ACTION = "org.autojs.SCRIPT_FINISHED";
+  private static final String AUTOJS_SCRIPT_FINISHED_ACTION = "org.autojs.SCRIPT_FINISHED_CACHE";
   private static final String SCRIPT_RESULT_KEY = "result";
 
   public static void stopAutojsScript(Context context) {
