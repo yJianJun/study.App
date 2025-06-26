@@ -84,14 +84,4 @@ public class ZipUtils {
 
         return apkFiles;
     }
-
-    public static String buildInstallCommand(List<File> apkFiles) {
-        StringBuilder cmd = new StringBuilder("pm install-multiple");
-
-        for (File apk : apkFiles) {
-            cmd.append(" \"").append(apk.getAbsolutePath()).append("\"");
-        }
-
-        return cmd.toString();
-    }
 }

@@ -21,14 +21,6 @@ public class ApkInstaller {
         return installSplitApks(apkFiles);
     }
 
-    private static boolean isSplitApk(List<File> apkFiles) {
-        for (File apk : apkFiles) {
-            if (apk.getName().contains("base.apk")) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private static boolean installSplitApks( List<File> apkFiles) {
         // 确保base.apk在第一位
@@ -49,7 +41,7 @@ public class ApkInstaller {
         }
 
         // 构建安装命令
-        StringBuilder cmd = new StringBuilder("pm install-multiple \"")
+        StringBuilder cmd = new StringBuilder("pm install \"")
                 .append(baseApk.getAbsolutePath()).append("\"");
 
         for (File apk : otherApks) {

@@ -201,16 +201,17 @@ public class ChangeDeviceInfoUtil {
     }
   }
 
-  public static void processPackageInfoWithDeviceInfo(String packageName,String zipName, Context context, String androidId, String taskId) {
+  public static boolean processPackageInfoWithDeviceInfo(String packageName,String zipName, Context context, String androidId, String taskId) {
     if (!isAppInstalled(packageName)) {
-      processPackage(packageName, zipName, context);
+      return processPackage(packageName, zipName, context);
 //      TaskUtil.postDeviceInfo(androidId, taskId, packageName);
     } else {
       LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "Package not installed: " + packageName, null);
+      return false;
     }
   }
 
-  private static void processPackage(String packageName, String zipName, Context context) {
+  private static boolean processPackage(String packageName, String zipName, Context context) {
     try {
       File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
       File file = TaskUtil.downloadCodeFile("FyZqWrStUvOpKlMn_wsj.reader_sp.zip", filesDir);
@@ -220,20 +221,22 @@ public class ChangeDeviceInfoUtil {
         if (destFile.exists()) {
           TaskUtil.delFileSh(destFile.getAbsolutePath());
         }
-//        TaskUtil.unZip(destFile, file);
         ZipUtils.unzip(file.getAbsolutePath(), destFile.getAbsolutePath());
         if (destFile.exists()) {
           installApk(destFile.getAbsolutePath());
         }
 
-//        TaskUtil.delFileSh(destFile.getAbsolutePath());
-//        TaskUtil.delFileSh(file.getAbsolutePath());
+        TaskUtil.delFileSh(destFile.getAbsolutePath());
+        TaskUtil.delFileSh(file.getAbsolutePath());
         LogFileUtil.logAndWrite(Log.DEBUG, LOG_TAG, "Processed package: " + packageName, null);
+        return true;
       } else {
         LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "File download failed for package: " + packageName, null);
+        return false;
       }
     } catch (Exception e) {
       LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error processing package: " + packageName, e);
+      return false;
     }
   }
 
@@ -252,8 +255,6 @@ public class ChangeDeviceInfoUtil {
     }
 
     boolean result = ApkInstaller.batchInstallWithRoot(apkFilePath);
-    // 执行命令并获取结果
-//    String result = ShellUtils.execRootCmdAndGetResult(command);
     if (result) {
       Log.d("ShellUtils", "APK installed successfully!");
       return true;

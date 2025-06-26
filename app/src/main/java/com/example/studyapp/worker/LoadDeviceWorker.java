@@ -20,6 +20,7 @@ import com.example.studyapp.device.ChangeDeviceInfoUtil;
 import com.example.studyapp.proxy.ClashUtil;
 import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.utils.LogFileUtil;
+import com.example.studyapp.utils.Utils;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,8 +38,10 @@ import kotlin.coroutines.Continuation;
 
 public class LoadDeviceWorker extends CoroutineWorker {
     private String androidId = "FyZqWrStUvOpKlMn";
+    private Context context;
     public LoadDeviceWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
+        this.context = context;
     }
 
     @Override
@@ -49,8 +52,10 @@ public class LoadDeviceWorker extends CoroutineWorker {
         String zipName = ChangeDeviceInfoUtil.zipName;
         Log.d("TAG", "doWork: "+result+" "+packageName+" "+zipName);
         if (result && !TextUtils.isEmpty(packageName) && !TextUtils.isEmpty(zipName)){
-            ChangeDeviceInfoUtil.processPackageInfoWithDeviceInfo(packageName,zipName, getApplicationContext(), androidId, taskId);
-//            executeSingleLogic(getApplicationContext());
+            boolean isSuccess = ChangeDeviceInfoUtil.processPackageInfoWithDeviceInfo(packageName,zipName, getApplicationContext(), androidId, taskId);
+            if (isSuccess){
+                executeSingleLogic(context);
+            }
         }else {
             Log.d("TAG", "doWork: get Device info false");
         }
@@ -65,6 +70,7 @@ public class LoadDeviceWorker extends CoroutineWorker {
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Changing device info",null);
         ChangeDeviceInfoUtil.changeDeviceInfo(context.getPackageName(), context);
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script",null);
+        Utils.writePackageName(ChangeDeviceInfoUtil.packageName);
         AutoJsUtil.runAutojsScript(context);
     }
 
@@ -75,11 +81,11 @@ public class LoadDeviceWorker extends CoroutineWorker {
             return;
         }
 
-        if (!(context instanceof Activity)) {
-            Toast.makeText(context, "Context must be an Activity", Toast.LENGTH_SHORT).show();
-            LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Context is not an Activity.",null);
-            return;
-        }
+//        if (!(context instanceof Activity)) {
+//            Toast.makeText(context, "Context must be an Activity", Toast.LENGTH_SHORT).show();
+//            LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Context is not an Activity.",null);
+//            return;
+//        }
 
         try {
             ClashUtil.startProxy(context); // 在主线程中调用
