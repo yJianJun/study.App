@@ -1,6 +1,8 @@
 package com.example.studyapp.utils;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -12,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class Utils {
 
@@ -23,6 +26,29 @@ public class Utils {
                 NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
                 return capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                         && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+            }
+        }
+        return false;
+    }
+
+    public static boolean isAppInstalled(Context context, String packageName) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    public static boolean isPackageInstalled(Context context, String packageName) {
+        PackageManager pm = context.getPackageManager();
+        List<ApplicationInfo> packages = pm.getInstalledApplications(0);
+
+        for (ApplicationInfo packageInfo : packages) {
+            Log.d("TAG", "isPackageInstalled: "+packageInfo.packageName);
+            if (packageInfo.packageName.equals(packageName)) {
+                return true;
             }
         }
         return false;

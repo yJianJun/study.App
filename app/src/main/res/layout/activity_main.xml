@@ -1,87 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools"
-  android:layout_width="match_parent"
-  android:layout_height="match_parent"
-  android:padding="16dp"
-  tools:context=".MainActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".MainActivity">
 
     <LinearLayout
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:orientation="vertical"
-      android:divider="@android:color/darker_gray"
-      android:showDividers="middle"
-      android:dividerPadding="8dp">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:divider="@android:color/darker_gray"
+        android:dividerPadding="8dp"
+        android:orientation="vertical"
+        android:showDividers="middle">
 
         <!-- VPN 分组标题 -->
         <TextView
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:text="VPN 操作"
-          android:padding="8dp"
-          android:gravity="center"
-          android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="VPN 操作"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:visibility="gone" />
 
         <!-- VPN 按钮 -->
         <Button
-          android:id="@+id/run_script_button"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="运行 脚本" />
+            android:id="@+id/run_script_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="运行 脚本"
+            android:visibility="gone" />
+
         <Button
-          android:id="@+id/connectVpnButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="开启 VPN" />
+            android:id="@+id/connectVpnButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开启 VPN"
+            android:visibility="gone" />
+
         <Button
-          android:id="@+id/disconnectVpnButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="断开 VPN" />
+            android:id="@+id/disconnectVpnButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="断开 VPN"
+            android:visibility="gone" />
+
         <Button
-          android:id="@+id/switchVpnButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="切换 VPN" />
+            android:id="@+id/switchVpnButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="切换 VPN"
+            android:visibility="gone" />
 
         <!-- 设备信息分组标题 -->
         <TextView
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:text="设备信息操作"
-          android:padding="8dp"
-          android:gravity="center"
-          android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="设备信息操作"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:visibility="gone" />
 
         <!-- 设备信息按钮 -->
         <Button
-          android:id="@+id/modifyDeviceInfoButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="修改设备信息" />
+            android:id="@+id/modifyDeviceInfoButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="修改设备信息"
+            android:visibility="gone" />
+
         <Button
-          android:id="@+id/resetDeviceInfoButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="重置设备信息" />
+            android:id="@+id/resetDeviceInfoButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="重置设备信息"
+            android:visibility="gone" />
+
         <TextView
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:text="Bigo操作"
-          android:padding="8dp"
-          android:gravity="center"
-          android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="Bigo操作"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
         <Button
-          android:id="@+id/execute_button"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="一键执行" />
+            android:id="@+id/execute_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="一键执行" />
+
         <Button
-          android:id="@+id/stop_execute_button"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="停止执行" />
+            android:id="@+id/stop_execute_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="停止执行" />
 
     </LinearLayout>
 

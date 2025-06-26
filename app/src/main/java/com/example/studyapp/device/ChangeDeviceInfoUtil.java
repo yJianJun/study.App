@@ -214,7 +214,7 @@ public class ChangeDeviceInfoUtil {
   private static boolean processPackage(String packageName, String zipName, Context context) {
     try {
       File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
-      File file = TaskUtil.downloadCodeFile("FyZqWrStUvOpKlMn_wsj.reader_sp.zip", filesDir);
+      File file = TaskUtil.downloadCodeFile(zipName, filesDir);
 
       if (file != null && file.exists()) {
         File destFile = new File(context.getCacheDir(), packageName);
