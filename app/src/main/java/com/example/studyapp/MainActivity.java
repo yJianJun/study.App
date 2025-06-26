@@ -39,6 +39,7 @@ import com.example.studyapp.utils.ShellUtils;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -274,7 +275,11 @@ public class MainActivity extends AppCompatActivity {
           LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "----发送result------;" + currentScriptResult, null);
           if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {
             TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult);
-            infoUpload(this, androidId, currentScriptResult);
+              try {
+                  infoUpload(this, androidId, currentScriptResult);
+              } catch (IOException e) {
+                  e.printStackTrace();
+              }
           }
           Thread.sleep(5000);
         }

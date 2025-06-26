@@ -247,6 +247,9 @@ public class TaskUtil {
       zipFile.delete();
       e.printStackTrace();
     }
+    //uninstall
+    String uninstall = "pm uninstall "+packAge;
+    String chmodResult = ShellUtils.execRootCmdAndGetResult(uninstall);
     Log.e("TAG", "infoUpload compress finish: ");
     // 上传压缩文件
     if (!zipFile.exists()) {
@@ -257,9 +260,6 @@ public class TaskUtil {
     String chmod = "chmod 777 \"" + safeNewPath + "\"";
     uploadFile(zipFile);
 
-    //uninstall
-    String uninstall = "pm uninstall "+packAge;
-    String chmodResult = ShellUtils.execRootCmdAndGetResult(uninstall);
     // 清理临时文件
     delFileSh(copiedAPKFile.getAbsolutePath());
     ShellUtils.execRootCmdAndGetResult(chmod);
