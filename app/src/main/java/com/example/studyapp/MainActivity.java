@@ -257,14 +257,6 @@ public class MainActivity extends AppCompatActivity {
         AutoJsUtil.flag = true;
 
         while (isRunning) {
-//          synchronized (taskLock) {
-//            while (!AutoJsUtil.flag && isRunning) {
-//              taskLock.wait(30000);
-//            }
-//
-//
-//            AutoJsUtil.flag = false;
-//          }
           if (!isRunning) break;
 
           // 从队列中获取最新的 scriptResult
