@@ -50,7 +50,7 @@ public class LoadDeviceWorker extends CoroutineWorker {
         Log.d("TAG", "doWork: "+result+" "+packageName+" "+zipName);
         if (result && !TextUtils.isEmpty(packageName) && !TextUtils.isEmpty(zipName)){
             ChangeDeviceInfoUtil.processPackageInfoWithDeviceInfo(packageName,zipName, getApplicationContext(), androidId, taskId);
-            executeSingleLogic(getApplicationContext());
+//            executeSingleLogic(getApplicationContext());
         }else {
             Log.d("TAG", "doWork: get Device info false");
         }

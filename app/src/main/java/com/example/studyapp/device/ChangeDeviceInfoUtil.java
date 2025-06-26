@@ -12,13 +12,16 @@ import com.example.studyapp.task.AfInfo;
 import com.example.studyapp.task.BigoInfo;
 import com.example.studyapp.task.DeviceInfo;
 import com.example.studyapp.task.TaskUtil;
+import com.example.studyapp.utils.ApkInstaller;
 import com.example.studyapp.utils.HttpUtil;
 import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
+import com.example.studyapp.utils.ZipUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -201,7 +204,7 @@ public class ChangeDeviceInfoUtil {
   public static void processPackageInfoWithDeviceInfo(String packageName,String zipName, Context context, String androidId, String taskId) {
     if (!isAppInstalled(packageName)) {
       processPackage(packageName, zipName, context);
-      TaskUtil.postDeviceInfo(androidId, taskId, packageName);
+//      TaskUtil.postDeviceInfo(androidId, taskId, packageName);
     } else {
       LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "Package not installed: " + packageName, null);
     }
@@ -210,21 +213,21 @@ public class ChangeDeviceInfoUtil {
   private static void processPackage(String packageName, String zipName, Context context) {
     try {
       File filesDir = new File(context.getExternalFilesDir(null).getAbsolutePath());
-      File file = TaskUtil.downloadCodeFile(zipName, filesDir);
+      File file = TaskUtil.downloadCodeFile("FyZqWrStUvOpKlMn_wsj.reader_sp.zip", filesDir);
 
       if (file != null && file.exists()) {
-        File destFile = new File(context.getCacheDir(), packageName+"_download"+".apk");
+        File destFile = new File(context.getCacheDir(), packageName);
         if (destFile.exists()) {
           TaskUtil.delFileSh(destFile.getAbsolutePath());
         }
-        TaskUtil.unZip(destFile, file);
-
+//        TaskUtil.unZip(destFile, file);
+        ZipUtils.unzip(file.getAbsolutePath(), destFile.getAbsolutePath());
         if (destFile.exists()) {
           installApk(destFile.getAbsolutePath());
         }
 
-        TaskUtil.delFileSh(destFile.getAbsolutePath());
-        TaskUtil.delFileSh(file.getAbsolutePath());
+//        TaskUtil.delFileSh(destFile.getAbsolutePath());
+//        TaskUtil.delFileSh(file.getAbsolutePath());
         LogFileUtil.logAndWrite(Log.DEBUG, LOG_TAG, "Processed package: " + packageName, null);
       } else {
         LogFileUtil.logAndWrite(android.util.Log.WARN, LOG_TAG, "File download failed for package: " + packageName, null);
@@ -248,12 +251,10 @@ public class ChangeDeviceInfoUtil {
       return false;
     }
 
-    // 构造安装命令
-    String command = "pm install-multiple " + apkFilePath;
-
+    boolean result = ApkInstaller.batchInstallWithRoot(apkFilePath);
     // 执行命令并获取结果
-    String result = ShellUtils.execRootCmdAndGetResult(command);
-    if (result != null && result.contains("Success")) {
+//    String result = ShellUtils.execRootCmdAndGetResult(command);
+    if (result) {
       Log.d("ShellUtils", "APK installed successfully!");
       return true;
     } else {

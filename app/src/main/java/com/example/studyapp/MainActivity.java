@@ -38,6 +38,7 @@ import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
 import com.example.studyapp.utils.Utils;
+import com.example.studyapp.utils.ZipUtils;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 import com.example.studyapp.worker.LoadDeviceWorker;
 
@@ -159,7 +160,21 @@ public class MainActivity extends AppCompatActivity {
     if (runScriptButton != null) {
 //      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
       runScriptButton.setOnClickListener(v -> {
-        Utils.writePackageName("com.test.app");
+        initializeExecutorService();
+        executorService.submit(() -> {
+          File files1Dir = new File(getExternalFilesDir(null).getAbsolutePath(),"FyZqWrStUvOpKlMn_wsj.reader_sp.zip");
+          File destFile = new File(Environment.getExternalStorageDirectory(), "apkpath");
+          Log.d("TAG", "onCreate: "+destFile.getAbsolutePath());
+          try {
+//            ZipUtils.unzip(files1Dir.getAbsolutePath(), destFile.getAbsolutePath());
+            if (destFile.exists()) {
+              ChangeDeviceInfoUtil.installApk(destFile.getAbsolutePath());
+            }
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        });
+
       });
     } else {
       LogFileUtil.logAndWrite(Log.WARN, "MainActivity", "Run Script Button not found",null);
