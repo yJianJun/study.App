@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.studyapp'
+    namespace 'com.titok.agent'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.example.studyapp"
+        applicationId "com.titok.agent"
         minSdk 24
         targetSdk 35
         versionCode 1
