@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
@@ -91,12 +92,14 @@ public class TaskUtil {
     if (packageName == null){
       packageName = "";
     }
+
     HttpUrl url = HttpUrl.parse(BASE_URL)
         .newBuilder()
         .addPathSegment("device_info_upload")
         .addQueryParameter("id", androidId)
         .addQueryParameter("taskId", taskId)
         .addQueryParameter("packageName", packageName)
+        .addQueryParameter("takeId", UUID.randomUUID().toString().replace("-", ""))
         .build();
 
     Log.d("TaskUtil", "Request URL: " + url.toString());
