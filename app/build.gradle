@@ -52,6 +52,14 @@ android {
             path file("src/main/cpp/CMakeLists.txt")
         }
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def versionName = variant.versionName ?: "1.0"
+            def versionCode = variant.versionCode ?: 1
+            output.outputFileName = "app-${variant.applicationId}-v${versionName}-${versionCode}.apk"
+        }
+    }
 }
 
 dependencies {
