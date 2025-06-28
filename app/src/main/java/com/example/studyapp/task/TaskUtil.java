@@ -99,7 +99,6 @@ public class TaskUtil {
         .addQueryParameter("id", androidId)
         .addQueryParameter("taskId", taskId)
         .addQueryParameter("packageName", packageName)
-        .addQueryParameter("takeId", UUID.randomUUID().toString().replace("-", ""))
         .build();
 
     Log.d("TaskUtil", "Request URL: " + url.toString());
