@@ -32,18 +32,12 @@ import androidx.work.WorkManager;
 import com.example.studyapp.autoJS.AutoJsUtil;
 import com.example.studyapp.device.ChangeDeviceInfoUtil;
 
-import com.example.studyapp.device.LoadDeviceCallback;
 import com.example.studyapp.proxy.ClashUtil;
 import com.example.studyapp.service.MyAccessibilityService;
 import com.example.studyapp.task.TaskUtil;
 import com.example.studyapp.utils.LogFileUtil;
-import com.example.studyapp.utils.ShellUtils;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 
-import org.json.JSONObject;
-
-import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -256,12 +250,12 @@ public class MainActivity extends AppCompatActivity {
         executorService.submit(() -> {
             try {
                 ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2, (bigoDevice, afDevice) -> {
-                    startProxyVpn(MainActivity.this);
-                    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), MainActivity.this, bigoDevice, afDevice);
-                    AutoJsUtil.runAutojsScript(this);
+                    if (startProxyVpn(MainActivity.this)){
+                        ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), MainActivity.this, bigoDevice, afDevice);
+                        AutoJsUtil.runAutojsScript(this);
+                    }
                 });
                 AutoJsUtil.registerScriptResultReceiver(this);
-                AutoJsUtil.flag = true;
 
                 while (isRunning) {
                     if (!isRunning) break;
@@ -270,12 +264,13 @@ public class MainActivity extends AppCompatActivity {
                         String currentScriptResult = scriptResultQueue.take();
                         ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2, (bigoDevice, afDevice) -> {
                             try {
-                                startProxyVpn(MainActivity.this);
-                                ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), MainActivity.this, bigoDevice, afDevice);
-                                AutoJsUtil.runAutojsScript(this);
-                                if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {
-                                    TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult);
-                                    infoUpload(this, androidId, currentScriptResult);
+                                if (startProxyVpn(MainActivity.this)){
+                                    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), MainActivity.this, bigoDevice, afDevice);
+                                    AutoJsUtil.runAutojsScript(this);
+                                    if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {
+                                        TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult);
+                                        infoUpload(this, androidId, currentScriptResult);
+                                    }
                                 }
                             } catch (Exception e) {
                                 LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "changeDeviceInfo erro", e);
@@ -295,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public static final LinkedBlockingQueue<String> scriptResultQueue = new LinkedBlockingQueue<>();
+    public static final LinkedBlockingQueue<String> scriptResultQueue = new LinkedBlockingQueue<>(1);
     private volatile boolean isRunning = true; // 主线程运行状态
     public static final Object taskLock = new Object();      // 任务逻辑锁
 
@@ -306,28 +301,32 @@ public class MainActivity extends AppCompatActivity {
 //    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
 
     /// /    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script",null);
+    ///
+    /// @return
 //    AutoJsUtil.runAutojsScript(this);
 //  }
-    private void startProxyVpn(Context context) {
+    private boolean startProxyVpn(Context context) {
         if (!isNetworkAvailable(context)) {
             Toast.makeText(context, "Network is not available", Toast.LENGTH_SHORT).show();
             LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Network is not available.", null);
-            return;
+            return false;
         }
 
         if (!(context instanceof Activity)) {
             Toast.makeText(context, "Context must be an Activity", Toast.LENGTH_SHORT).show();
             LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Context is not an Activity.", null);
-            return;
+            return false;
         }
 
         try {
             ClashUtil.startProxy(context); // 在主线程中调用
             ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
+            return ClashUtil.checkCountryIsUS();
         } catch (Exception e) {
             LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Failed to start VPN", e);
             Toast.makeText(context, "Failed to start VPN: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
         }
+        return false;
     }
 
     @Override

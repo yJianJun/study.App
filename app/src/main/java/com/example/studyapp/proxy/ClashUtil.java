@@ -17,6 +17,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -116,26 +117,69 @@ public class ClashUtil {
         .put(requestBody)
         .build();
 
-    client.newCall(request).enqueue(new Callback() {
-      @Override
-      public void onFailure(Call call, IOException e) {
-        LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Failed to switch proxy", e);
-        System.out.println("Failed to switch proxy: " + e.getMessage());
+    try {
+      Response response = client.newCall(request).execute();
+
+      if (response.isSuccessful() && response.body() != null) {
+        LogFileUtil.logAndWrite(Log.INFO, "ClashUtil", "switchProxyGroup: Switch proxy response", null);
+      } else {
+        LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Response is not successful or body is null", null);
       }
 
-      @Override
-      public void onResponse(Call call, Response response) throws IOException {
-        try {
-          if (response.body() != null) {
-            LogFileUtil.logAndWrite(Log.INFO, "ClashUtil", "switchProxyGroup: Switch proxy response", null);
-          } else {
-            LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Response body is null", null);
-          }
-        } finally {
-          response.close();
-        }
+      response.close();
+    } catch (IOException e) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Failed to switch proxy", e);
+      System.out.println("Failed to switch proxy: " + e.getMessage());
+    }
+  }
+
+  public static boolean checkCountryIsUS() {
+    Request request = new Request.Builder()
+        .url("http://ipinfo.io/json")
+        .build();
+    OkHttpClient client = new OkHttpClient();
+    try (Response response = client.newCall(request).execute()) { // Synchronous call
+      if (!response.isSuccessful()) {
+        // Server returned an error
+        Log.e("ClashUtil", "OkHttp request unsuccessful: " + response.code());
+        // Consider how to handle this error synchronously.
+        // Maybe throw an exception or return a specific error indicator.
+        return false; // Or throw new IOException("Request failed with code " + response.code());
       }
-    });
+
+      try (ResponseBody responseBody = response.body()) {
+        if (responseBody == null) {
+          Log.e("ClashUtil", "Response body is null");
+          return false; // Or throw new IOException("Response body is null");
+        }
+
+        String jsonData = responseBody.string();
+        JSONObject jsonObject = new JSONObject(jsonData);
+        String country = jsonObject.optString("country");
+        boolean isUS = "US".equalsIgnoreCase(country);
+
+        if (isUS) {
+          Log.i("ClashUtil", "Country is US. Full data: " + jsonData);
+        } else {
+          Log.i("ClashUtil", "Country is NOT US. It is: " + (country.isEmpty() ? "未知" : country) + ". Full data: " + jsonData);
+        }
+        return isUS;
+
+      } catch (JSONException e) {
+        Log.e("ClashUtil", "JSON parsing error: ", e);
+        // Consider re-throwing or returning an error indicator
+        return false;
+      } catch (IOException e) {
+        Log.e("ClashUtil", "IOException reading response body: ", e);
+        // Consider re-throwing or returning an error indicator
+        return false;
+      }
+    } catch (IOException e) {
+      // Network request failed
+      Log.e("ClashUtil", "OkHttp request failed: ", e);
+      // Consider re-throwing or returning an error indicator
+      return false;
+    }
   }
 
 }
