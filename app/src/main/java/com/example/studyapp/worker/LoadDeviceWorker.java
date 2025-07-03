@@ -64,9 +64,7 @@ public class LoadDeviceWorker extends CoroutineWorker {
 
     public void executeSingleLogic(Context context) {
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Proxy not active, starting VPN",null);
-        if (!startProxyVpn(context)){
-            return;
-        }
+        startProxyVpn(context);
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Changing device info",null);
         ChangeDeviceInfoUtil.changeDeviceInfo(context.getPackageName(), context);
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script",null);
@@ -74,11 +72,10 @@ public class LoadDeviceWorker extends CoroutineWorker {
         AutoJsUtil.runAutojsScript(context);
     }
 
-    private boolean startProxyVpn(Context context) {
+    private void startProxyVpn(Context context) {
         if (!isNetworkAvailable(context)) {
             Toast.makeText(context, "Network is not available", Toast.LENGTH_SHORT).show();
             LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Network is not available.",null);
-            return false;
         }
 
 //        if (!(context instanceof Activity)) {
@@ -86,15 +83,12 @@ public class LoadDeviceWorker extends CoroutineWorker {
 //            LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Context is not an Activity.",null);
 //            return;
 //        }
-
         try {
             ClashUtil.startProxy(context); // 在主线程中调用
             ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
-            return ClashUtil.checkCountryIsUS();
         } catch (Exception e) {
             LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Failed to start VPN",e);
             Toast.makeText(context, "Failed to start VPN: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
-            return false;
         }
     }
 }
