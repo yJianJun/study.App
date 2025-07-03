@@ -2,8 +2,14 @@ package com.example.studyapp.utils;
 
 import android.text.TextUtils;
 
+import android.util.Log;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.json.JSONObject;
 
 import java.util.concurrent.CompletableFuture;
@@ -43,6 +49,35 @@ public class IpUtil {
             return true;
         } catch (UnknownHostException e) {
             return false;
+        }
+    }
+
+    public static String fetchGeoInfo() {
+        Request request = new Request.Builder()
+            .url("https://ipv4.geojs.io/v1/ip/geo.json")
+            .build();
+
+        OkHttpClient client = new OkHttpClient();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                Log.e("ClashUtil", "OkHttp request unsuccessful: " + response.code());
+                return null;
+            }
+
+            ResponseBody responseBody = response.body();
+            if (responseBody == null) {
+                Log.e("ClashUtil", "Response body is null");
+                return null;
+            }
+
+            String jsonData = responseBody.string();
+            Log.i("ClashUtil", "Geo info: " + jsonData);
+            return jsonData;
+
+        } catch (IOException e) {
+            Log.e("ClashUtil", "OkHttp request failed: ", e);
+            return null;
         }
     }
 

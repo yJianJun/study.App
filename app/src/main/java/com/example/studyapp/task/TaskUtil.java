@@ -1,18 +1,12 @@
 package com.example.studyapp.task;
 
-import static androidx.core.content.PackageManagerCompat.LOG_TAG;
-
 import android.content.Context;
-import android.os.Environment;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.example.studyapp.utils.FileUtils;
 import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.utils.ShellUtils;
 import com.example.studyapp.utils.ZipUtils;
-import com.google.android.gms.common.util.CollectionUtils;
-import com.google.android.gms.common.util.MapUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -21,15 +15,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -38,7 +27,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -65,7 +53,7 @@ public class TaskUtil {
       .readTimeout(30, TimeUnit.SECONDS)    // 读取超时
       .build();
 
-  public static void postDeviceInfo(String androidId, String taskId,String packageName) {
+  public static void postDeviceInfo(String androidId, String taskId,String packageName, String ipInfo) {
     Log.i("TaskUtil", "postDeviceInfo called with androidId: " + androidId);
 
     if (okHttpClient == null) {
@@ -99,6 +87,7 @@ public class TaskUtil {
         .addQueryParameter("id", androidId)
         .addQueryParameter("taskId", taskId)
         .addQueryParameter("packageName", packageName)
+        .addQueryParameter("deviceIp",ipInfo)
         .build();
 
     Log.d("TaskUtil", "Request URL: " + url.toString());
@@ -783,7 +772,7 @@ public class TaskUtil {
     return getDeviceInfoSync(androidId,taskId);
   }
 
-  public static void execSaveTask(Context context, String androidId, String taskId,String packName) {
+  public static void execSaveTask(Context context, String androidId, String taskId,String packName, String ipInfo) {
     if (context == null) {
       throw new IllegalArgumentException("Context or Package name cannot be null or empty");
     }
@@ -794,7 +783,7 @@ public class TaskUtil {
     }
 
     try {
-      postDeviceInfo(androidId, taskId,packName);
+      postDeviceInfo(androidId, taskId,packName,ipInfo);
     } catch (Exception e) {
       System.err.println("Error in execReloginTask: " + e.getMessage());
       e.printStackTrace();

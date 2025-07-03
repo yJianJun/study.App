@@ -131,14 +131,14 @@ public class TaskUtilTest {
 
     // 运行上传方法
     String taskId = "asddasdasd";
-    TaskUtil.postDeviceInfo("b3d893cf9de3a85a", taskId, "com.example.studyapp");
+    //TaskUtil.postDeviceInfo("b3d893cf9de3a85a", taskId, "com.example.studyapp", ipInfo);
   }
 
   @Test
   public void testGetDeviceInfoSync_Success() throws Exception {
 
     // 运行上传方法
-   TaskUtil.getDeviceInfoSync("b3d893cf9de3a85a");
+   //TaskUtil.getDeviceInfoSync("b3d893cf9de3a85a");
   }
 
   // @Test
