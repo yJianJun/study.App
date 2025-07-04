@@ -6,6 +6,15 @@ android {
     namespace 'com.example.studyapp'
     compileSdk 35
 
+    signingConfigs {
+        release {
+            storeFile file('agent_retention.jks')
+            storePassword 'agent_retention'
+            keyAlias 'agent_retention'
+            keyPassword 'agent_retention'
+        }
+    }
+
     defaultConfig {
         applicationId "com.example.retention"
         minSdk 24
@@ -30,7 +39,8 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            signingConfig signingConfigs.release
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
