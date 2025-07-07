@@ -187,11 +187,12 @@ public class MainActivity extends AppCompatActivity {
   }
 
   // 添加切换国家的方法
-  private void switchCountry() {
+  private String switchCountry() {
     currentCountry = currentCountry.equals(CountryCode.US) ?
         CountryCode.RU : CountryCode.US;
     LogFileUtil.logAndWrite(Log.INFO, TAG,
         "Switched country to: " + currentCountry, null);
+    return currentCountry;
   }
 
 
@@ -204,8 +205,7 @@ public class MainActivity extends AppCompatActivity {
     setupButton(R.id.connectVpnButton, v -> startProxyVpn(this));
     setupButton(R.id.disconnectVpnButton, v -> ClashUtil.stopProxy(this));
     setupButton(R.id.switchVpnButton, v -> {
-      switchCountry();
-      ClashUtil.switchProxyGroup("GLOBAL", currentCountry, "http://127.0.0.1:6170");
+      ClashUtil.switchProxyGroup("GLOBAL", switchCountry(), "http://127.0.0.1:6170");
     });
     setupButton(R.id.resetDeviceInfoButton,
         v -> ChangeDeviceInfoUtil.resetChangedDeviceInfo(getPackageName(), this));
@@ -361,8 +361,7 @@ public class MainActivity extends AppCompatActivity {
     }
     try {
       ClashUtil.startProxy(context);
-      // 使用相同的国家代码
-      ClashUtil.switchProxyGroup("GLOBAL", currentCountry, "http://127.0.0.1:6170");
+      ClashUtil.switchProxyGroup("GLOBAL", switchCountry(), "http://127.0.0.1:6170");
     } catch (Exception e) {
       LogFileUtil.logAndWrite(Log.ERROR, TAG, "startProxyVpn: Failed to start VPN", e);
       Toast.makeText(context, "Failed to start VPN: " +
