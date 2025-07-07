@@ -79,7 +79,23 @@ public class MainActivity extends AppCompatActivity {
       "ge", "ps"
   };
 
-  public static volatile String scriptResult;
+  private static final int REQUEST_CODE_PERMISSIONS = 100;
+
+  private static final String TAG = "MainActivity";
+  private static final String PACKAGE_SCHEME = "package:";
+  private static final int DEVICE_TYPE = 2;
+
+  // 定义支持的国家代码常量
+  private static final class CountryCode {
+
+    static final String US = "us";
+    static final String RU = "ru";
+    // 默认使用美国
+    static final String DEFAULT = US;
+  }
+
+  // 当前使用的国家代码
+  private String currentCountry = CountryCode.DEFAULT;
 
   // 初始化 ExecutorService
   private void initializeExecutorService() {
@@ -103,27 +119,6 @@ public class MainActivity extends AppCompatActivity {
   private String getAndroidId(Context context) {
     return "FyZqWrStUvOpKlMn";
   }
-
-
-  private static final int REQUEST_CODE_PERMISSIONS = 100;
-
-  private static final String TAG = "MainActivity";
-  private static final String PACKAGE_SCHEME = "package:";
-  private static final String COUNTRY_CODE = "US";
-  private static final int DEVICE_TYPE = 2;
-
-  // 定义支持的国家代码常量
-  private static final class CountryCode {
-
-    static final String US = "us";
-    static final String RU = "ru";
-    // 默认使用美国
-    static final String DEFAULT = US;
-  }
-
-  // 当前使用的国家代码
-  private String currentCountry = CountryCode.DEFAULT;
-
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
