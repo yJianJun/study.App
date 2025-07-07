@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">study_app</string>
     <string name="accessibility_service_description">This is an accessibility service.</string>
+    <string name="task_executing">任务执行中</string>
+    <string name="button_not_found">按钮未找到</string>
+    <string name="network_unavailable">网络不可用</string>
+    <string name="stop_button_not_found">停止按钮未找到</string>
 </resources>

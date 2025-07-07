@@ -53,27 +53,6 @@ public class ChangeDeviceInfoUtil {
   // 创建一个线程池用于执行网络任务
   private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-  public static void initialize(String country, int tag, Context context, String androidId) {
-    LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Initializing device info...", null);
-
-    executorService.submit(() -> {
-      try {
-        LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Starting network requests...", null);
-        String bigoJson = fetchJsonSafely(buildBigoUrl(country, tag), "bigoJson");
-        String afJson = fetchJsonSafely(buildAfUrl(country, tag), "afJson");
-
-        fallBackToNetworkData(bigoJson, afJson);
-
-        logDeviceObjects();
-        processPackageInfo(TaskUtil.getPackageInfo(androidId), context);
-
-      } catch (IOException | JSONException e) {
-        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during initialization", e);
-      } catch (Exception e) {
-        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during initialization", e);
-      }
-    });
-  }
 
   public static void getAddDeviceInfo(String country, int tag, LoadDeviceCallback callback){
     LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Initializing device info...", null);

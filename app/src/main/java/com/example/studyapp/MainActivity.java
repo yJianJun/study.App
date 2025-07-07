@@ -11,16 +11,20 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 
+import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -39,12 +43,14 @@ import com.example.studyapp.utils.IpUtil;
 import com.example.studyapp.utils.LogFileUtil;
 import com.example.studyapp.worker.CheckAccessibilityWorker;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -95,133 +101,160 @@ public class MainActivity extends AppCompatActivity {
    * @return 设备的 ANDROID_ID，若无法获取，则返回 null
    */
   private String getAndroidId(Context context) {
-//    if (context == null) {
-//      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Context cannot be null",null);
-//      throw new IllegalArgumentException("Context cannot be null");
-//    }
-//    try {
-//      return Settings.Secure.getString(
-//          context.getContentResolver(),
-//          Settings.Secure.ANDROID_ID
-//      );
-//    } catch (Exception e) {
-//      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "getAndroidId: Failed to get ANDROID_ID",e);
-//      return null;
-//    }
     return "FyZqWrStUvOpKlMn";
   }
 
 
   private static final int REQUEST_CODE_PERMISSIONS = 100;
 
+  private static final String TAG = "MainActivity";
+  private static final String PACKAGE_SCHEME = "package:";
+  private static final String COUNTRY_CODE = "US";
+  private static final int DEVICE_TYPE = 2;
+
+  // 定义支持的国家代码常量
+  private static final class CountryCode {
+
+    static final String US = "us";
+    static final String RU = "ru";
+    // 默认使用美国
+    static final String DEFAULT = US;
+  }
+
+  // 当前使用的国家代码
+  private String currentCountry = CountryCode.DEFAULT;
+
+
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    initializeBasicComponents();
+    checkAndRequestPermissions();
+    checkNetworkConnection();
+    setupWorkManager();
+    initializeButtons();
+  }
+
+  private void initializeBasicComponents() {
     LogFileUtil.initialize(this);
     setContentView(R.layout.activity_main);
     instance = new WeakReference<>(this);
-
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Initializing application", null);
+    LogFileUtil.logAndWrite(Log.INFO, TAG, "onCreate: Initializing application", null);
     initializeExecutorService();
-    System.setProperty("java.library.path", this.getApplicationInfo().nativeLibraryDir);
+    System.setProperty("java.library.path", getApplicationInfo().nativeLibraryDir);
+  }
+
+  private void checkAndRequestPermissions() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-          != PackageManager.PERMISSION_GRANTED) {
-        ActivityCompat.requestPermissions(
-            this,
-            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-            REQUEST_CODE_STORAGE_PERMISSION
-        );
-      }
+      checkStoragePermission();
     } else {
+      checkAllFilesAccessPermission();
+    }
+  }
+
+  private void checkStoragePermission() {
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+        != PackageManager.PERMISSION_GRANTED) {
+      ActivityCompat.requestPermissions(
+          this,
+          new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+          REQUEST_CODE_STORAGE_PERMISSION
+      );
+    }
+  }
+
+  private void checkAllFilesAccessPermission() {
+    if (VERSION.SDK_INT >= VERSION_CODES.R) {
       if (!Environment.isExternalStorageManager()) {
         Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-        intent.setData(Uri.parse("package:" + getPackageName()));
+        intent.setData(Uri.parse(PACKAGE_SCHEME + getPackageName()));
         startActivityForResult(intent, ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE);
       }
     }
+  }
+
+  private void checkNetworkConnection() {
     if (!isNetworkAvailable(this)) {
-      Toast.makeText(this, "Network is not available", Toast.LENGTH_SHORT).show();
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "Network not available, closing app.", null);
+      LogFileUtil.logAndWrite(Log.ERROR, TAG, "Network not available, closing app.", null);
+      Toast.makeText(this, R.string.network_unavailable, Toast.LENGTH_SHORT).show();
       finish();
     }
+  }
 
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Setting up work manager", null);
-    PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(CheckAccessibilityWorker.class, 15, TimeUnit.MINUTES)
-        .build();
+  private void setupWorkManager() {
+    LogFileUtil.logAndWrite(Log.INFO, TAG, "onCreate: Setting up work manager", null);
+    PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(
+        CheckAccessibilityWorker.class,
+        15,
+        TimeUnit.MINUTES
+    ).build();
     WorkManager.getInstance(this).enqueue(workRequest);
+  }
 
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "onCreate: Setting up UI components", null);
-    Button runScriptButton = findViewById(R.id.run_script_button);
-    if (runScriptButton != null) {
-      runScriptButton.setOnClickListener(v -> {
-        initializeExecutorService();
+  // 添加切换国家的方法
+  private void switchCountry() {
+    currentCountry = currentCountry.equals(CountryCode.US) ?
+        CountryCode.RU : CountryCode.US;
+    LogFileUtil.logAndWrite(Log.INFO, TAG,
+        "Switched country to: " + currentCountry, null);
+  }
 
-        executorService.submit(() -> {
-          try {
-            TaskUtil.infoUpload(MainActivity.this, getAndroidId(MainActivity.this), "wsj.reader_sp");
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        });
-      });
-//      runScriptButton.setOnClickListener(v -> AutoJsUtil.runAutojsScript(this));
-    } else {
-      LogFileUtil.logAndWrite(Log.WARN, "MainActivity", "Run Script Button not found", null);
-      Toast.makeText(this, "Button not found", Toast.LENGTH_SHORT).show();
-    }
 
-    Button connectButton = findViewById(R.id.connectVpnButton);
-    if (connectButton != null) {
-      connectButton.setOnClickListener(v -> startProxyVpn(this));
-    } else {
-      Toast.makeText(this, "Connect button not found", Toast.LENGTH_SHORT).show();
-    }
-
-    Button disconnectButton = findViewById(R.id.disconnectVpnButton);
-    if (disconnectButton != null) {
-      disconnectButton.setOnClickListener(v -> ClashUtil.stopProxy(this));
-    } else {
-      Toast.makeText(this, "Disconnect button not found", Toast.LENGTH_SHORT).show();
-    }
-
-    Button switchVpnButton = findViewById(R.id.switchVpnButton);
-    if (switchVpnButton != null) {
-      switchVpnButton.setOnClickListener(v -> ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170"));
-    } else {
-      Toast.makeText(this, "Disconnect button not found", Toast.LENGTH_SHORT).show();
-    }
-
-//    Button modifyDeviceInfoButton = findViewById(R.id.modifyDeviceInfoButton);
-//    if (modifyDeviceInfoButton != null) {
-//      modifyDeviceInfoButton.setOnClickListener(v -> ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this));
-//    } else {
-//      Toast.makeText(this, "modifyDeviceInfo button not found", Toast.LENGTH_SHORT).show();
-//    }
-
-    Button resetDeviceInfoButton = findViewById(R.id.resetDeviceInfoButton);
-    if (resetDeviceInfoButton != null) {
-      resetDeviceInfoButton.setOnClickListener(v -> ChangeDeviceInfoUtil.resetChangedDeviceInfo(getPackageName(), this));
-    } else {
-      Toast.makeText(this, "resetDeviceInfo button not found", Toast.LENGTH_SHORT).show();
-    }
-
-    // 初始化 ChangeDeviceInfoUtil
+  private void initializeButtons() {
+    LogFileUtil.logAndWrite(Log.INFO, TAG, "onCreate: Setting up UI components", null);
     String androidId = getAndroidId(this);
     String taskId = UUID.randomUUID().toString();
-//    ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2);
-    // 获取输入框和按钮
+
+    setupButton(R.id.run_script_button, v -> executeRunScript(androidId));
+    setupButton(R.id.connectVpnButton, v -> startProxyVpn(this));
+    setupButton(R.id.disconnectVpnButton, v -> ClashUtil.stopProxy(this));
+    setupButton(R.id.switchVpnButton, v -> {
+      switchCountry();
+      ClashUtil.switchProxyGroup("GLOBAL", currentCountry, "http://127.0.0.1:6170");
+    });
+    setupButton(R.id.resetDeviceInfoButton,
+        v -> ChangeDeviceInfoUtil.resetChangedDeviceInfo(getPackageName(), this));
+    setupExecutionButtons(androidId, taskId);
+  }
+
+
+  private void setupButton(@IdRes int buttonId, View.OnClickListener listener) {
+    Button button = findViewById(buttonId);
+    if (button != null) {
+      button.setOnClickListener(listener);
+    } else {
+      LogFileUtil.logAndWrite(Log.WARN, TAG, "Button not found: " + buttonId, null);
+      Toast.makeText(this, R.string.button_not_found, Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  private void executeRunScript(String androidId) {
+    initializeExecutorService();
+    executorService.submit(() -> {
+      try {
+        TaskUtil.infoUpload(MainActivity.this, androidId, "wsj.reader_sp");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
+  }
+
+  private void setupExecutionButtons(String androidId, String taskId) {
     Button executeButton = findViewById(R.id.execute_button);
     Button stopExecuteButton = findViewById(R.id.stop_execute_button);
 
-    // 设置按钮的点击事件
     if (executeButton != null) {
       executeButton.setOnClickListener(v -> {
         executeButton.setEnabled(false);
-        Toast.makeText(this, "任务正在执行", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.task_executing, Toast.LENGTH_SHORT).show();
         executeLogic(androidId, taskId);
       });
     }
+
+    setupStopExecutionButton(stopExecuteButton, executeButton);
+  }
+
+  private void setupStopExecutionButton(Button stopExecuteButton, Button executeButton) {
     if (stopExecuteButton != null) {
       stopExecuteButton.setOnClickListener(v -> {
         if (executorService != null && !executorService.isShutdown()) {
@@ -232,80 +265,95 @@ public class MainActivity extends AppCompatActivity {
         }
       });
     } else {
-      Toast.makeText(this, "Stop button not found", Toast.LENGTH_SHORT).show();
+      Toast.makeText(this, R.string.stop_button_not_found, Toast.LENGTH_SHORT).show();
     }
   }
 
   private void executeLogic(String androidId, String taskId) {
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeLogic: Start execution", null);
+    LogFileUtil.logAndWrite(Log.INFO, TAG, "Start execution", null);
 
     if (!isNetworkAvailable(this)) {
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "executeLogic: Network is not available!", null);
-      Toast.makeText(this, "网络不可用，请检查网络连接", Toast.LENGTH_SHORT).show();
       return;
     }
 
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeLogic: Submitting job to executor", null);
     initializeExecutorService();
+    executorService.submit(() -> processMainTask(androidId, taskId));
+  }
 
-    executorService.submit(() -> {
-      try {
-        ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2, (bigoDevice, afDevice) -> {
-          startProxyVpn(MainActivity.this);
-          ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), MainActivity.this, bigoDevice, afDevice);
+  private void processMainTask(String androidId, String taskId) {
+    try {
+      initializeDeviceAndRunScript();
+      processScriptResults(androidId, taskId);
+    } catch (Exception e) {
+      LogFileUtil.logAndWrite(Log.ERROR, TAG, "Unexpected task error", e);
+    }
+  }
+
+  private void initializeDeviceAndRunScript() {
+    ChangeDeviceInfoUtil.getAddDeviceInfo(currentCountry.toUpperCase(), DEVICE_TYPE,
+        (bigoDevice, afDevice) -> {
+          startProxyVpn(this);
+          ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this,
+              bigoDevice, afDevice);
           AutoJsUtil.runAutojsScript(this);
         });
-        AutoJsUtil.registerScriptResultReceiver(this);
-
-        while (isRunning) {
-          if (!isRunning) {
-            break;
-          }
-          try {
-            LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script", null);
-            String currentScriptResult = scriptResultQueue.take();
-            ChangeDeviceInfoUtil.getAddDeviceInfo("US", 2, (bigoDevice, afDevice) -> {
-              try {
-                startProxyVpn(MainActivity.this);
-                ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), MainActivity.this, bigoDevice, afDevice);
-                AutoJsUtil.runAutojsScript(this);
-                if (currentScriptResult != null && !TextUtils.isEmpty(currentScriptResult)) {
-                  TaskUtil.execSaveTask(this, androidId, taskId, currentScriptResult, IpUtil.fetchGeoInfo());
-                  infoUpload(this, androidId, currentScriptResult);
-                }
-              } catch (Exception e) {
-                LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "changeDeviceInfo erro", e);
-              }
-            });
-            LogFileUtil.logAndWrite(android.util.Log.DEBUG, "MainActivity", "----发送result------;" + currentScriptResult, null);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "loop: Thread interrupted while waiting", e);
-          } catch (Exception e) {
-            LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "loop erro", e);
-          }
-        }
-      } catch (Exception e) {
-        LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "start executeLogic: Unexpected task error.", e);
-      }
-    });
+    AutoJsUtil.registerScriptResultReceiver(this);
   }
+
+
+  private void processScriptResults(String androidId, String taskId) {
+    while (isRunning) {
+      try {
+        String currentScriptResult = scriptResultQueue.take();
+        if (!isRunning) {
+          break;
+        }
+
+        processScriptResult(androidId, taskId, currentScriptResult);
+        LogFileUtil.logAndWrite(Log.DEBUG, TAG, "Script result processed: " + currentScriptResult, null);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        LogFileUtil.logAndWrite(Log.ERROR, TAG, "Thread interrupted while waiting", e);
+        break;
+      } catch (Exception e) {
+        LogFileUtil.logAndWrite(Log.ERROR, TAG, "Error processing script result", e);
+      }
+    }
+  }
+
+  private void processScriptResult(String androidId, String taskId, String result) {
+
+    ChangeDeviceInfoUtil.getAddDeviceInfo(currentCountry.toUpperCase(), DEVICE_TYPE,
+        (bigoDevice, afDevice) -> {
+          try {
+            updateDeviceAndExecuteTask(androidId, taskId, result, bigoDevice, afDevice);
+          } catch (Exception e) {
+            LogFileUtil.logAndWrite(Log.ERROR, TAG, "Device info change error", e);
+          }
+        });
+  }
+
+
+  private void updateDeviceAndExecuteTask(String androidId, String taskId,
+      String result, JSONObject bigoDevice, JSONObject afDevice) {
+    startProxyVpn(this);
+    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this, bigoDevice, afDevice);
+    AutoJsUtil.runAutojsScript(this);
+
+    TaskUtil.execSaveTask(this, androidId, taskId, result, IpUtil.fetchGeoInfo());
+    try {
+      infoUpload(this, androidId, result);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 
   public static final LinkedBlockingQueue<String> scriptResultQueue = new LinkedBlockingQueue<>(1);
   private volatile boolean isRunning = true; // 主线程运行状态
   public static final Object taskLock = new Object();      // 任务逻辑锁
 
-//  public void executeSingleLogic() {
-////    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Proxy not active, starting VPN",null);
-//    startProxyVpn(this);
-//    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Changing device info",null);
-//    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this);
 
-  /// /    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script",null);
-  ///
-  /// @return
-//    AutoJsUtil.runAutojsScript(this);
-//  }
   private void startProxyVpn(Context context) {
     if (!isNetworkAvailable(context)) {
       Toast.makeText(context, "Network is not available", Toast.LENGTH_SHORT).show();
@@ -317,11 +365,14 @@ public class MainActivity extends AppCompatActivity {
       LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Context is not an Activity.", null);
     }
     try {
-      ClashUtil.startProxy(context); // 在主线程中调用
-      ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
+      ClashUtil.startProxy(context);
+      // 使用相同的国家代码
+      ClashUtil.switchProxyGroup("GLOBAL", currentCountry, "http://127.0.0.1:6170");
     } catch (Exception e) {
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Failed to start VPN", e);
-      Toast.makeText(context, "Failed to start VPN: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
+      LogFileUtil.logAndWrite(Log.ERROR, TAG, "startProxyVpn: Failed to start VPN", e);
+      Toast.makeText(context, "Failed to start VPN: " +
+              (e.getMessage() != null ? e.getMessage() : "Unknown error"),
+          Toast.LENGTH_SHORT).show();
     }
   }
 
@@ -414,9 +465,6 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  public static MainActivity getInstance() {
-    return instance.get(); // 返回实例
-  }
 
   private boolean isNetworkAvailable(Context context) {
     ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
