@@ -1,6 +1,7 @@
 package com.example.studyapp.task;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.example.studyapp.utils.FileUtils;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import okhttp3.HttpUrl;
+import okhttp3.HttpUrl.Builder;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -77,19 +79,18 @@ public class TaskUtil {
 
     Log.d("TaskUtil", "Request payload: " + jsonRequestBody);
 
-    if (packageName == null){
-      packageName = "";
-    }
-
-    HttpUrl url = HttpUrl.parse(BASE_URL)
+    Builder urlBuilder = HttpUrl.parse(BASE_URL)
         .newBuilder()
         .addPathSegment("device_info_upload")
         .addQueryParameter("id", androidId)
         .addQueryParameter("taskId", taskId)
-        .addQueryParameter("packageName", packageName)
-        .addQueryParameter("deviceIp",ipInfo)
-        .build();
+        .addQueryParameter("deviceIp",ipInfo);
 
+    if (!TextUtils.isEmpty(packageName)){
+      urlBuilder.addQueryParameter("packageName", packageName);
+    }
+
+    HttpUrl url = urlBuilder.build();
     Log.d("TaskUtil", "Request URL: " + url.toString());
 
     RequestBody body = RequestBody.create(MediaType.get("application/json; charset=utf-8"), jsonRequestBody);
@@ -188,7 +189,7 @@ public class TaskUtil {
 
     if (packAge == null || packAge.isEmpty()) {
       LogFileUtil.logAndWrite(android.util.Log.ERROR, "TaskUtil", "Package name is null or empty", null);
-      throw new IllegalArgumentException("Package name cannot be null or empty");
+      return;
     }
 
     if (context == null) {
