@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.work.CoroutineWorker;
 import androidx.work.WorkerParameters;
 
+import com.example.retention.MainActivity;
 import com.example.retention.autoJS.AutoJsUtil;
 import com.example.retention.device.ChangeDeviceInfoUtil;
 import com.example.retention.proxy.ClashUtil;
@@ -54,7 +55,7 @@ public class LoadDeviceWorker extends CoroutineWorker {
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Proxy not active, starting VPN",null);
         startProxyVpn(context);
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Changing device info",null);
-        ChangeDeviceInfoUtil.changeDeviceInfo(context.getPackageName(), context);
+        ChangeDeviceInfoUtil.changeDeviceInfo(context.getPackageName(), context, MainActivity.armClient);
         LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script",null);
         Utils.writePackageName(ChangeDeviceInfoUtil.packageName);
         AutoJsUtil.runAutojsScript(context);

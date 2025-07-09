@@ -285,7 +285,7 @@ public class ChangeDeviceInfoUtil {
   }
 
 
-  public static void changeDeviceInfo(String current_pkg_name, Context context, ArmCloudApiClient client, String[] padCodes) {
+  public static void changeDeviceInfo(String current_pkg_name, Context context, ArmCloudApiClient client) {
 
     final String B_PREFIX = current_pkg_name + ".";
     final String U_PREFIX = current_pkg_name + "_";
@@ -438,6 +438,7 @@ public class ChangeDeviceInfoUtil {
 
         // 调用接口更新实例属性
         try {
+          String[] padCodes = client.getDeviceCodes(1, 1, null, null, null, null, null, null, null, null);
           String response = client.updateInstanceProperties(
               padCodes,
               null,  // modemPersistProps

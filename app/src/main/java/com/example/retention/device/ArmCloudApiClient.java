@@ -34,16 +34,14 @@ public class ArmCloudApiClient {
 
   private final OkHttpClient client;
   private final String baseUrl = "https://openapi-hk.armcloud.net";
-  private final String accessKey;
-  private final String secretKey;
+  private final String accessKey = "gz8f1u0t63byzdu6ozbx8r5qs3e5lipt";
+  private final String secretKey = "3yc8c8bg1dym0zaiwjh867al";
 
-  public ArmCloudApiClient(String baseUrl, String accessKey, String secretKey) {
+  public ArmCloudApiClient() {
     this.client = new Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .build();
-    this.accessKey = accessKey;
-    this.secretKey = secretKey;
   }
 
   private static final String ALGORITHM = "HmacSHA256";
