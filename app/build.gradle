@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.example.studyapp'
+    namespace 'com.example.retention'
     compileSdk 35
 
     signingConfigs {

@@ -1,4 +1,4 @@
-package com.example.studyapp.task;
+package com.example.retention.task;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -131,7 +131,7 @@ public class TaskUtilTest {
 
     // 运行上传方法
     String taskId = "asddasdasd";
-    TaskUtil.postDeviceInfo("b3d893cf9de3a85a", taskId, "com.example.studyapp");
+    TaskUtil.postDeviceInfo("b3d893cf9de3a85a", taskId, "com.example.retention");
   }
 
   @Test

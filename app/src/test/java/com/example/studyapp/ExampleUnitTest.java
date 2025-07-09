@@ -1,4 +1,4 @@
-package com.example.studyapp;
+package com.example.retention;
 
 import org.junit.Test;
 

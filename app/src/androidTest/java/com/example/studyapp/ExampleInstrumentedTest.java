@@ -1,4 +1,4 @@
-package com.example.studyapp;
+package com.example.retention;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.example.studyapp", appContext.getPackageName());
+        assertEquals("com.example.retention", appContext.getPackageName());
     }
 }
