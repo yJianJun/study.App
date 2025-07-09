@@ -88,11 +88,6 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private String getAndroidId() {
-    return "FyZqWrStUvOpKlMn";
-  }
-
-
   private static final int REQUEST_CODE_PERMISSIONS = 100;
 
   @Override
