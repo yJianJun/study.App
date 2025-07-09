@@ -4,11 +4,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Environment;
 import android.util.Log;
 import androidx.core.content.ContextCompat;
 import com.example.retention.utils.LogFileUtil;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -26,6 +31,18 @@ import org.json.JSONObject;
  * @Description:
  */
 public class ClashUtil {
+  private static final HttpLoggingInterceptor httpLoggingInterceptor= new HttpLoggingInterceptor();
+
+  private static final OkHttpClient sharedClient ;
+
+  static {
+    httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+    sharedClient = new OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS) // 连接超时
+            .readTimeout(30, TimeUnit.SECONDS)    // 读取超时
+            .addInterceptor(httpLoggingInterceptor)
+            .build();
+  }
 
   public static void startProxy(Context context) {
     Intent intent = new Intent("com.github.kr328.clash.intent.action.SESSION_CREATE");
@@ -82,6 +99,60 @@ public class ClashUtil {
     context.unregisterReceiver(clashStatusReceiver);
   }
 
+  public static int getProxyPort(){
+    File scriptDir = new File(Environment.getExternalStorageDirectory(), "script");
+    File portFile = new File(scriptDir, "ip.port.json");
+    StringBuilder text = new StringBuilder();
+    try (BufferedReader br = new BufferedReader(new FileReader(portFile))) {
+      String line;
+      while ((line = br.readLine()) != null) {
+        text.append(line).append('\n');
+      }
+    } catch (IOException e) {
+      Log.e("TAG", "getProxyPort: ", e);
+      return -1;
+    }
+    int port = -1;
+    try{
+      Log.d("TAG", "getProxyPort: "+text);
+      JSONObject config = new JSONObject(text.toString());
+      port = config.optInt("port", -1);
+    }catch (Exception e){
+      Log.e("TAG", "getProxyPort: ", e);
+    }
+    return port;
+  }
+
+  public static void switchProxyWithPort(String country) {
+    int port = getProxyPort();
+    // 安全构建 URL
+    HttpUrl url = HttpUrl.parse("http://39.103.73.250/tt/test/testProxy.jsp")
+            .newBuilder()
+            .addQueryParameter("port", port+"")
+            .addQueryParameter("country", country)
+            .build();
+
+    Request request = new Request.Builder()
+            .url(url)
+            .build();
+
+    // 使用 try-with-resources 确保 Response 自动关闭
+    try (Response response = sharedClient.newCall(request).execute()) {
+      // 读取并记录响应内容
+      String responseBody = response.body() != null ? response.body().string() : "Empty response body";
+
+      if (response.isSuccessful()) {
+        LogFileUtil.logAndWrite(Log.INFO, "ClashUtil",
+                "switchProxyGroup: Success | Status: " + response.code() + " | Response: " + responseBody, null);
+      } else {
+        LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil",
+                "switchProxyGroup: Failed | Status: " + response.code() + " | Response: " + responseBody, null);
+      }
+    } catch (Exception e) {
+      LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Unexpected error", e);
+    }
+  }
+
   public static void switchProxyGroup(String groupName, String proxyName, String controllerUrl) {
     if (groupName == null || groupName.trim().isEmpty() || proxyName == null || proxyName.trim().isEmpty()) {
       LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Invalid arguments", null);
@@ -114,25 +185,20 @@ public class ClashUtil {
         .put(requestBody)
         .build();
 
-    try (Response response = client.newCall(request).execute()) { // 将 enqueue 改为 execute
-      if (response.isSuccessful()) { // 检查请求是否成功 (HTTP 状态码 200-299)
-        if (response.body() != null) {
-          LogFileUtil.logAndWrite(Log.INFO, "ClashUtil", "switchProxyGroup: Switch proxy response", null);
-          // 如果需要，可以在这里处理响应体
-          // 例如: String responseBodyString = response.body().string();
-          // Log.d("ClashUtil", "Response body: " + responseBodyString);
-        } else {
-          LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Response body is null", null);
-        }
+    try {
+      Response response = client.newCall(request).execute();
+
+      if (response.isSuccessful() && response.body() != null) {
+        LogFileUtil.logAndWrite(Log.INFO, "ClashUtil", "switchProxyGroup: Switch proxy response", null);
       } else {
-        // 请求失败，可以获取 HTTP 状态码
-        LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Failed to switch proxy. Code: " + response.code(), null);
-        System.out.println("Failed to switch proxy. Code: " + response.code());
+        LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Response is not successful or body is null", null);
       }
+
+      response.close();
     } catch (IOException e) {
-      // 网络请求过程中发生 I/O 错误
       LogFileUtil.logAndWrite(Log.ERROR, "ClashUtil", "switchProxyGroup: Failed to switch proxy", e);
       System.out.println("Failed to switch proxy: " + e.getMessage());
     }
   }
+
 }
