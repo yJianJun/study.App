@@ -193,16 +193,6 @@ public class MainActivity extends AppCompatActivity {
   public static final LinkedBlockingQueue<String> scriptResultQueue = new LinkedBlockingQueue<>();
 
 
-  public void executeSingleLogic() {
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Proxy not active, starting VPN", null);
-    startProxyVpn(this);
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Changing device info", null);
-    ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this,armClient);
-    LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script", null);
-    AutoJsUtil.runAutojsScript(this);
-  }
-
-
   private void startProxyVpn(Context context) {
     if (!isNetworkAvailable(context)) {
       Toast.makeText(context, "Network is not available", Toast.LENGTH_SHORT).show();
@@ -217,11 +207,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     try {
-      ClashUtil.startProxy(context); // 在主线程中调用
-      ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170");
+      ClashUtil.startProxy(context);
+      ClashUtil.switchProxyWithPort(CountryCode.switchCountry());
+      // ClashUtil.switchProxyGroup("PROXY", "my-socks5-proxy", "http://127.0.0.1:6170");
     } catch (Exception e) {
-      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Failed to start VPN", e);
-      Toast.makeText(context, "Failed to start VPN: " + (e.getMessage() != null ? e.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
+      LogFileUtil.logAndWrite(Log.ERROR, TAG, "startProxyVpn: Failed to start VPN", e);
+      Toast.makeText(context, "Failed to start VPN: " +
+              (e.getMessage() != null ? e.getMessage() : "Unknown error"),
+          Toast.LENGTH_SHORT).show();
     }
   }
 
