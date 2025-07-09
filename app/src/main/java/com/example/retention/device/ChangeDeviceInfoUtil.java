@@ -438,7 +438,7 @@ public class ChangeDeviceInfoUtil {
 
         // 调用接口更新实例属性
         try {
-          String[] padCodes = client.getDeviceCodes(1, 1, null, null, null, null, null, null, null, null);
+          String[] padCodes = client.getDeviceCodes(1, 100, null, null, null, null, null, null, null, null);
           String response = client.updateInstanceProperties(
               padCodes,
               null,  // modemPersistProps
