@@ -30,6 +30,7 @@ import androidx.work.WorkManager;
 
 import com.example.retention.R;
 import com.example.retention.autoJS.AutoJsUtil;
+import com.example.retention.config.CountryCode;
 import com.example.retention.device.ArmCloudApiClient;
 import com.example.retention.device.ChangeDeviceInfoUtil;
 
@@ -211,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
       ClashUtil.switchProxyWithPort(CountryCode.switchCountry());
       // ClashUtil.switchProxyGroup("PROXY", "my-socks5-proxy", "http://127.0.0.1:6170");
     } catch (Exception e) {
-      LogFileUtil.logAndWrite(Log.ERROR, TAG, "startProxyVpn: Failed to start VPN", e);
+      LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "startProxyVpn: Failed to start VPN", e);
       Toast.makeText(context, "Failed to start VPN: " +
               (e.getMessage() != null ? e.getMessage() : "Unknown error"),
           Toast.LENGTH_SHORT).show();
