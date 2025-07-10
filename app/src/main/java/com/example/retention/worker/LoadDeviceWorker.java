@@ -42,25 +42,29 @@ public class LoadDeviceWorker extends CoroutineWorker {
     boolean result = ChangeDeviceInfoUtil.getDeviceInfoSync(taskId, androidId);
     String packageName = ChangeDeviceInfoUtil.packageName;
     String zipName = ChangeDeviceInfoUtil.zipName;
-    Log.d("TAG", "doWork: " + result + " " + packageName + " " + zipName);
+    LogFileUtil.logAndWrite(Log.INFO, "TAG","doWork: " + result + " " + packageName + " " + zipName, null);
     if (result && !TextUtils.isEmpty(packageName) && !TextUtils.isEmpty(zipName)) {
       boolean isSuccess = ChangeDeviceInfoUtil.processPackageInfoWithDeviceInfo(packageName, zipName, getApplicationContext(), androidId, taskId);
       if (isSuccess) {
-        executeSingleLogic(context);
+        executeSingleLogic(context, packageName);
       }
     } else {
-      Log.d("TAG", "doWork: get Device info false");
+      LogFileUtil.logAndWrite(Log.INFO, "TAG", "doWork: get Device info false",  null);
     }
     return Result.success();
   }
 
-  public void executeSingleLogic(Context context) {
+  public void executeSingleLogic(Context context, String packageName) {
+    if (packageName == null || packageName.isEmpty()){
+      LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Package name is empty", null);
+      return;
+    }
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Proxy not active, starting VPN", null);
     startProxyVpn(context);
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Changing device info", null);
-    ChangeDeviceInfoUtil.changeDeviceInfo(context.getPackageName(), context, MainActivity.armClient);
+    ChangeDeviceInfoUtil.changeDeviceInfo(packageName, context, MainActivity.armClient);
     LogFileUtil.logAndWrite(Log.INFO, "MainActivity", "executeSingleLogic: Running AutoJs script", null);
-    Utils.writePackageName(ChangeDeviceInfoUtil.packageName);
+    Utils.writePackageName(packageName);
     AutoJsUtil.runAutojsScript(context);
   }
 
