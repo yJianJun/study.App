@@ -25,6 +25,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
+import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
@@ -38,6 +39,7 @@ import com.example.retention.proxy.ClashUtil;
 import com.example.retention.service.MyAccessibilityService;
 import com.example.retention.task.TaskUtil;
 import com.example.retention.utils.LogFileUtil;
+import com.example.retention.utils.ShellUtils;
 import com.example.retention.worker.CheckAccessibilityWorker;
 import com.example.retention.worker.LoadDeviceWorker;
 
@@ -92,87 +94,108 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    LogFileUtil.initialize(this);
-    setContentView(R.layout.activity_main);
+      super.onCreate(savedInstanceState);
+      LogFileUtil.initialize(this);
+      setContentView(R.layout.activity_main);
 
-    logInfo("onCreate: Initializing application");
+      logInfo("onCreate: Initializing application");
 
-    initializeExecutorService();
+      initializeExecutorService();
 
-    System.setProperty("java.library.path", getApplicationInfo().nativeLibraryDir);
+      System.setProperty("java.library.path", getApplicationInfo().nativeLibraryDir);
 
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-          != PackageManager.PERMISSION_GRANTED) {
-        ActivityCompat.requestPermissions(
-            this,
-            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-            REQUEST_CODE_STORAGE_PERMISSION
-        );
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+          if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                  != PackageManager.PERMISSION_GRANTED) {
+              requestStoragePermission();
+          }
+      } else {
+          if (!Environment.isExternalStorageManager()) {
+              Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+              intent.setData(Uri.parse("package:" + getPackageName()));
+              startActivityForResult(intent, ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE);
+          }
       }
-    } else {
-      if (!Environment.isExternalStorageManager()) {
-        Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-        intent.setData(Uri.parse("package:" + getPackageName()));
-        startActivityForResult(intent, ALLOW_ALL_FILES_ACCESS_PERMISSION_CODE);
+
+      if (!isNetworkAvailable(this)) {
+          showToast("网络不可用");
+          logError("Network not available, closing app.");
+          finish();
+          return;
       }
-    }
 
-    if (!isNetworkAvailable(this)) {
-      showToast("网络不可用");
-      logError("Network not available, closing app.");
-      finish();
-      return;
-    }
+      logInfo("onCreate: Setting up work manager");
+      schedulePeriodicWorkIfNotExists();
 
-    logInfo("onCreate: Setting up work manager");
-    PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(CheckAccessibilityWorker.class, 15, TimeUnit.MINUTES)
-        .build();
-    WorkManager.getInstance(this).enqueue(workRequest);
+      logInfo("onCreate: Setting up UI components");
 
-    logInfo("onCreate: Setting up UI components");
-
-    setupButton(R.id.run_script_button, v -> AutoJsUtil.runAutojsScript(this));
-    setupButton(R.id.connectVpnButton, v -> startProxyVpn(this));
-    setupButton(R.id.disconnectVpnButton, v -> ClashUtil.stopProxy(this));
-    setupButton(R.id.switchVpnButton, v -> ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170"));
-
-    armClient = new ArmCloudApiClient();
-
-    setupButton(R.id.modifyDeviceInfoButton, v -> ChangeDeviceInfoUtil.changeDeviceInfo(getPackageName(), this, armClient));
-    setupButton(R.id.resetDeviceInfoButton, v -> ChangeDeviceInfoUtil.resetChangedDeviceInfo(getPackageName(), this));
-
-    Button executeButton = findViewById(R.id.execute_button);
-    Button stopExecuteButton = findViewById(R.id.stop_execute_button);
-
-    if (executeButton != null) {
-      executeButton.setOnClickListener(v -> {
-        executeButton.setEnabled(false);
-        startLoadWork();
+      setupButton(R.id.run_script_button, v -> {
+          try {
+              AutoJsUtil.runAutojsScript(this);
+          } catch (Exception e) {
+              LogFileUtil.logAndWrite(Log.ERROR, "MainActivity", "runAutojsScript: " + e.getMessage(), e);
+              showToast("执行脚本失败");
+          }
       });
-    }
+      setupButton(R.id.connectVpnButton, v -> startProxyVpn(this));
+      setupButton(R.id.disconnectVpnButton, v -> ClashUtil.stopProxy(this));
+      setupButton(R.id.switchVpnButton, v -> ClashUtil.switchProxyGroup("GLOBAL", "us", "http://127.0.0.1:6170"));
 
-    if (stopExecuteButton != null) {
-      stopExecuteButton.setOnClickListener(v -> {
-        WorkManager.getInstance(this).cancelAllWorkByTag(WORK_TAG);
-        executeButton.setEnabled(true);
+      armClient = new ArmCloudApiClient();
+
+      String currentPackage = getPackageName();
+      ShellUtils.execRootCmdAndGetResult("pm grant " + currentPackage + " android.permission.INTERACT_ACROSS_USERS");
+      ShellUtils.execRootCmdAndGetResult("pm grant " + currentPackage + " android.permission.WRITE_SECURE_SETTINGS");
+
+      setupButton(R.id.modifyDeviceInfoButton, v -> ChangeDeviceInfoUtil.changeDeviceInfo(currentPackage, this, armClient));
+      setupButton(R.id.resetDeviceInfoButton, v -> ChangeDeviceInfoUtil.resetChangedDeviceInfo(currentPackage, this));
+
+      setupButton(R.id.execute_button, v -> {
+          ((Button) v).setEnabled(false);
+          startLoadWork();
       });
-    } else {
-      showToast("Stop button not found");
-    }
+
+      setupButton(R.id.stop_execute_button, v -> {
+          WorkManager.getInstance(this).cancelAllWorkByTag(WORK_TAG);
+          Button executeButton = findViewById(R.id.execute_button);
+          if (executeButton != null) {
+              executeButton.setEnabled(true);
+          }
+      });
+  }
+
+  private void requestStoragePermission() {
+      ActivityCompat.requestPermissions(
+          this,
+          new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+          REQUEST_CODE_STORAGE_PERMISSION
+      );
+  }
+  private void schedulePeriodicWorkIfNotExists() {
+      WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("CheckAccessibilityWorker")
+          .observe(this, workInfos -> {
+              if (workInfos == null || workInfos.isEmpty()) {
+                  PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(CheckAccessibilityWorker.class, 15, TimeUnit.MINUTES)
+                      .addTag("CheckAccessibilityWorker")
+                      .build();
+                  WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                      "CheckAccessibilityWorker",
+                      ExistingPeriodicWorkPolicy.REPLACE,
+                      workRequest
+                  );
+              }
+          });
   }
 
 
+
   private void setupButton(int resId, View.OnClickListener listener) {
-    Button button = findViewById(resId);
-    if (button != null) {
-      button.setOnClickListener(listener);
-    } else {
-      String msg = getResources().getResourceEntryName(resId) + " not found";
-      logWarn(msg);
-      showToast(msg);
-    }
+      Button button = findViewById(resId);
+      if (button != null) {
+          button.setOnClickListener(listener);
+      } else {
+          logInfo("Button not found: " + resId);
+      }
   }
 
   private static String WORK_TAG = "LOAD_WORK";
