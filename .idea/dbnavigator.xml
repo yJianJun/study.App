@@ -24,7 +24,7 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="9e7d43d6-9c6a-47fa-b0b1-b14b18fadac4">
-      <console name="Connection" type="STANDARD" schema="" session="Main" />
+      <console name="Connection" type="STANDARD" schema="gin_demo" session="Main" />
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseEditorStateManager">
@@ -35,6 +35,9 @@
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="9e7d43d6-9c6a-47fa-b0b1-b14b18fadac4" />
+  </component>
+  <component name="DBNavigator.Project.ExecutionManager">
+    <retain-sticky-names value="false" />
   </component>
   <component name="DBNavigator.Project.ObjectQuickFilterManager">
     <last-used-operator value="EQUAL" />
