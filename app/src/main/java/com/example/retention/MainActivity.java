@@ -202,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
 
   private void startLoadWork() {
     PeriodicWorkRequest workRequest = new PeriodicWorkRequest.
-        Builder(LoadDeviceWorker.class, 30, TimeUnit.MINUTES)
+        Builder(LoadDeviceWorker.class, 30, TimeUnit.SECONDS)
         .setInitialDelay(0, TimeUnit.SECONDS)
         .addTag(WORK_TAG)
         .build();
