@@ -13,5 +13,6 @@
         <domain includeSubdomains="true">8.217.137.25</domain>
         <domain includeSubdomains="true">47.238.96.231</domain>
         <domain includeSubdomains="true">192.168.30.80</domain>
+        <domain includeSubdomains="true">39.103.73.250</domain> <!-- 你的特定 IP 地址 -->
     </domain-config>
 </network-security-config>

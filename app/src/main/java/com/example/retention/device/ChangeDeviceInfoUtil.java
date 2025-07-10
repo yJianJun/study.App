@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,8 @@ public class ChangeDeviceInfoUtil {
         String bigoJson = fetchJsonSafely(buildBigoUrl(country, tag), "bigoJson");
         String afJson = fetchJsonSafely(buildAfUrl(country, tag), "afJson");
 
+        LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Received bigoJson: " + bigoJson, null);
+        LogFileUtil.logAndWrite(android.util.Log.DEBUG, LOG_TAG, "Received afJson: " + afJson, null);
         fallBackToNetworkData(bigoJson, afJson);
 
         logDeviceObjects();
@@ -107,37 +110,7 @@ public class ChangeDeviceInfoUtil {
     }
   }
 
-  public static void getDeviceInfo(String taskId, String androidId) {
-    if (taskId == null || androidId == null || taskId.isBlank() || androidId.isBlank()) {
-      LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Invalid task", null);
-      return;
-    }
 
-    executorService.submit(() -> {
-      String response = "";
-      try {
-        response = executeQuerySafely(androidId, taskId);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      if (response == null || response.isBlank()) {
-        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query", null);
-        return;
-      }
-
-      if (isValidResponse(response)) {
-        try {
-          synchronized (ChangeDeviceInfoUtil.class) { // 防止并发访问
-            parseAndSetDeviceObjects(response);
-          }
-        } catch (JSONException e) {
-          LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error parsing JSON", e);
-        }
-      } else {
-        LogFileUtil.logAndWrite(android.util.Log.ERROR, LOG_TAG, "Error occurred during query", null);
-      }
-    });
-  }
 
   private static String fetchJsonSafely(String url, String logKey) throws IOException {
     String json = null;
@@ -438,7 +411,8 @@ public class ChangeDeviceInfoUtil {
 
         // 调用接口更新实例属性
         try {
-          String[] padCodes = client.getDeviceCodes(1, 100, null, null, null, null, null, null, null, null);
+          String[] padCodes = client.getInstanceListInfo(1, 100, null, null, null, null, null);
+          LogFileUtil.logAndWrite(Log.DEBUG, "ChangeDeviceInfoUtil", "padCodes: " + Arrays.toString(padCodes), null);
           String response = client.updateInstanceProperties(
               padCodes,
               null,  // modemPersistProps

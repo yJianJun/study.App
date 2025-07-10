@@ -233,11 +233,9 @@ public class ArmCloudApiClient {
               if (code != 200) {
                   String errorMsg = responseJson.optString("msg", "未知错误");
                   LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "updateInstanceProperties: 接口返回错误码 " + code + ", 错误信息: " + errorMsg, null);
-                  throw new IOException("接口返回错误码: " + code + ", 错误信息: " + errorMsg);
               }
           } else {
               LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "updateInstanceProperties: 响应中缺少 'code' 字段",null);
-              throw new IOException("响应中缺少 'code' 字段");
           }
 
           return responseBodyString;
@@ -278,137 +276,130 @@ public class ArmCloudApiClient {
   }
 
   /**
-   * 分页查询 ARM 设备列表，并提取 deviceCode
+   * 分页查询实例列表信息
    *
-   * @param page                  页码
-   * @param rows                  每页条数
-   * @param padAllocationStatus   实例分配状态：-2删除失败 -1分配失败 0-未分配；1-分配中 2-已分配 3-删除中
-   * @param deviceStatus          物理机状态：0-离线；1-在线
-   * @param armServerCode         服务器编码
-   * @param deviceCode            物理机编号
-   * @param deviceIp              物理机IP
-   * @param armServerStatus       服务器状态：0-离线；1-在线
-   * @param idc                   机房ID
-   * @param deviceIpList          板卡IP列表
-   * @return                      匹配的 deviceCode 数组
-   * @throws IOException          请求失败或网络错误
+   * @param page          页码
+   * @param rows          每页条数
+   * @param armServerCode 服务器编号
+   * @param deviceCode    板卡编号
+   * @param padCodes      实例编号数组
+   * @param groupIds      实例分组ID数组
+   * @param idc           机房Id
+   * @return 匹配的 padCode 数组
+   * @throws IOException 请求失败或网络错误
    */
-  public String[] getDeviceCodes(
-          int page,
-          int rows,
-          Integer padAllocationStatus,
-          Integer deviceStatus,
-          String armServerCode,
-          String deviceCode,
-          String deviceIp,
-          Integer armServerStatus,
-          String idc,
-          String[] deviceIpList) throws IOException {
+      public String[] getInstanceListInfo(
+              int page,
+              int rows,
+              String armServerCode,
+              String deviceCode,
+              String[] padCodes,
+              Integer[] groupIds,
+              String idc) throws IOException {
 
-      JSONObject json = new JSONObject();
-      try {
-          json.put("page", page);
-          json.put("rows", rows);
+          JSONObject json = new JSONObject();
+          try {
+              json.put("page", page);
+              json.put("rows", rows);
 
-          if (padAllocationStatus != null) json.put("padAllocationStatus", padAllocationStatus);
-          if (deviceStatus != null) json.put("deviceStatus", deviceStatus);
-          if (armServerCode != null) json.put("armServerCode", armServerCode);
-          if (deviceCode != null) json.put("deviceCode", deviceCode);
-          if (deviceIp != null) json.put("deviceIp", deviceIp);
-          if (armServerStatus != null) json.put("armServerStatus", armServerStatus);
-          if (idc != null) json.put("idc", idc);
-          if (deviceIpList != null && deviceIpList.length > 0) {
-              json.put("deviceIpList", new JSONArray(Arrays.asList(deviceIpList)));
-          }
-
-      } catch (JSONException e) {
-          LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getDeviceCodes: JSON 构建失败", e);
-          throw new IOException("JSON 构建失败", e);
-      }
-
-      String jsonBody = json.toString();
-      String timestamp = String.valueOf(System.currentTimeMillis());
-      String API_PATH = "/openapi/open/device/list";
-
-      if (secretKey == null || secretKey.isEmpty()) {
-          throw new IllegalArgumentException("secretKey 不能为空");
-      }
-
-      String signature;
-      try {
-          signature = calculateSignature(timestamp, API_PATH, jsonBody, secretKey);
-      } catch (Exception e) {
-          LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getDeviceCodes: 签名计算失败", e);
-          throw new IOException("签名计算失败", e);
-      }
-
-      RequestBody body = RequestBody.create(
-              MediaType.get("application/json; charset=utf-8"),
-              jsonBody
-      );
-
-      Request request = new Request.Builder()
-              .url(baseUrl + API_PATH)
-              .addHeader("authver", "2.0")
-              .addHeader("x-ak", accessKey)
-              .addHeader("x-timestamp", timestamp)
-              .addHeader("x-sign", signature)
-              .post(body)
-              .build();
-
-      try (Response response = client.newCall(request).execute()) {
-          if (!response.isSuccessful()) {
-              throw new IOException("请求失败: " + response);
-          }
-
-          ResponseBody responseBody = response.body();
-          if (responseBody == null) {
-              throw new IOException("响应体为空");
-          }
-
-          String responseBodyString = responseBody.string();
-          JSONObject responseJson = new JSONObject(responseBodyString);
-
-          // 校验返回码
-          if (responseJson.has("code")) {
-              int code = responseJson.getInt("code");
-              if (code != 200) {
-                  String errorMsg = responseJson.optString("msg", "未知错误");
-                  LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getDeviceCodes: 接口返回错误码 " + code + ", 错误信息: " + errorMsg,null);
-                  throw new IOException("接口返回错误码: " + code + ", 错误信息: " + errorMsg);
+              if (armServerCode != null) json.put("armServerCode", armServerCode);
+              if (deviceCode != null) json.put("deviceCode", deviceCode);
+              if (padCodes != null && padCodes.length > 0) {
+                  json.put("padCodes", new JSONArray(Arrays.asList(padCodes)));
               }
-          } else {
-              LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getDeviceCodes: 响应中缺少 'code' 字段",null);
-              throw new IOException("响应中缺少 'code' 字段");
-          }
-
-          // 提取 deviceCode 列表
-          JSONArray pageDataArray = responseJson.optJSONObject("data")
-                  .optJSONArray("pageData");
-
-          if (pageDataArray == null || pageDataArray.length() == 0) {
-              LogFileUtil.logAndWrite(Log.WARN, "ArmCloudApiClient", "getDeviceCodes: 查询结果为空",null);
-              return new String[0];
-          }
-
-          int length = pageDataArray.length();
-          String[] deviceCodes = new String[length];
-
-          for (int i = 0; i < length; i++) {
-              JSONObject item = pageDataArray.getJSONObject(i);
-              if (!item.has("deviceCode")) {
-                  LogFileUtil.logAndWrite(Log.WARN, "ArmCloudApiClient", "getDeviceCodes: 返回对象缺少 'deviceCode' 字段",null);
-                  throw new IOException("返回对象缺少 'deviceCode' 字段");
+              if (groupIds != null && groupIds.length > 0) {
+                  json.put("groupIds", new JSONArray(Arrays.asList(groupIds)));
               }
-              deviceCodes[i] = item.getString("deviceCode");
+              if (idc != null) json.put("idc", idc);
+
+          } catch (JSONException e) {
+              LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getInstanceListInfo: JSON 构建失败", e);
+              throw new IOException("JSON 构建失败", e);
           }
 
-          return deviceCodes;
+          String jsonBody = json.toString();
+          String timestamp = String.valueOf(System.currentTimeMillis());
+          String API_PATH = "/openapi/open/pad/infos";
 
-      } catch (JSONException e) {
-          LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getDeviceCodes: 响应解析失败", e);
-          throw new IOException("响应解析失败", e);
+          if (secretKey == null || secretKey.isEmpty()) {
+              throw new IllegalArgumentException("secretKey 不能为空");
+          }
+
+          String signature;
+          try {
+              signature = calculateSignature(timestamp, API_PATH, jsonBody, secretKey);
+          } catch (Exception e) {
+              LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getInstanceListInfo: 签名计算失败", e);
+              throw new IOException("签名计算失败", e);
+          }
+
+          RequestBody body = RequestBody.create(
+                  MediaType.get("application/json; charset=utf-8"),
+                  jsonBody
+          );
+
+          Request request = new Request.Builder()
+                  .url(baseUrl + API_PATH)
+                  .addHeader("authver", "2.0")
+                  .addHeader("x-ak", accessKey)
+                  .addHeader("x-timestamp", timestamp)
+                  .addHeader("x-sign", signature)
+                  .post(body)
+                  .build();
+
+          try (Response response = client.newCall(request).execute()) {
+              if (!response.isSuccessful()) {
+                  throw new IOException("请求失败: " + response);
+              }
+
+              ResponseBody responseBody = response.body();
+              if (responseBody == null) {
+                  throw new IOException("响应体为空");
+              }
+
+              String responseBodyString = responseBody.string();
+              JSONObject responseJson = new JSONObject(responseBodyString);
+
+              // 校验返回码
+              if (responseJson.has("code")) {
+                  int code = responseJson.getInt("code");
+                  if (code != 200) {
+                      String errorMsg = responseJson.optString("msg", "未知错误");
+                      LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getInstanceListInfo: 接口返回错误码 " + code + ", 错误信息: " + errorMsg, null);
+                      throw new IOException("接口返回错误码: " + code + ", 错误信息: " + errorMsg);
+                  }
+              } else {
+                  LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getInstanceListInfo: 响应中缺少 'code' 字段", null);
+                  throw new IOException("响应中缺少 'code' 字段");
+              }
+
+              // 提取 padCode 列表
+              JSONArray pageDataArray = responseJson.optJSONObject("data")
+                      .optJSONArray("pageData");
+
+              if (pageDataArray == null || pageDataArray.length() == 0) {
+                  LogFileUtil.logAndWrite(Log.WARN, "ArmCloudApiClient", "getInstanceListInfo: 查询结果为空", null);
+                  return new String[0];
+              }
+
+              int length = pageDataArray.length();
+              String[] padCodesResult = new String[length];
+
+              for (int i = 0; i < length; i++) {
+                  JSONObject item = pageDataArray.getJSONObject(i);
+                  if (!item.has("padCode")) {
+                      LogFileUtil.logAndWrite(Log.WARN, "ArmCloudApiClient", "getInstanceListInfo: 返回对象缺少 'padCode' 字段", null);
+                      throw new IOException("返回对象缺少 'padCode' 字段");
+                  }
+                  padCodesResult[i] = item.getString("padCode");
+              }
+
+              return padCodesResult;
+
+          } catch (JSONException e) {
+              LogFileUtil.logAndWrite(Log.ERROR, "ArmCloudApiClient", "getInstanceListInfo: 响应解析失败", e);
+              throw new IOException("响应解析失败", e);
+          }
       }
-  }
 
 }

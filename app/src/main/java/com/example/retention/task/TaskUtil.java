@@ -139,6 +139,7 @@ public class TaskUtil {
     Log.d("TaskUtil", "Built HTTP request for device info download");
 
     try (Response response = okHttpClient.newCall(request).execute()) {
+      LogFileUtil.logAndWrite(android.util.Log.DEBUG, "TaskUtil", "Response : " + response, null);
       // 检查响应是否成功
       if (!response.isSuccessful()) {
         String errorMessage = "Unexpected response: Code=" + response.code() +
@@ -800,4 +801,3 @@ class Payload {
   AfInfo afDeviceObject;
   DeviceInfo other;
 }
-
