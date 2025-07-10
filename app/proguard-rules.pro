@@ -1,21 +1,27 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# 保留 ArmCloudApiClient 及其所有公共方法和构造函数
+-keep class com.example.retention.device.ArmCloudApiClient {
+    public <init>();
+    public *;
+}
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 保留 PropertyItem 内部类及其字段、构造函数和 toJson 方法
+-keep class com.example.retention.device.ArmCloudApiClient$PropertyItem {
+    private java.lang.String propertiesName;
+    private java.lang.String propertiesValue;
+    public <init>(java.lang.String, java.lang.String);
+    public org.json.JSONObject toJson();
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# 保留枚举类
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 保留使用 @SerializedName 注解的字段
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# 保留注解信息（根据需要启用）
+# -keepattributes *Annotation*

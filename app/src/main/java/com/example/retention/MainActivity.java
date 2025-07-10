@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
     WorkManager.getInstance(this).enqueue(workRequest);
   }
 
-  public static final LinkedBlockingQueue<String> scriptResultQueue = new LinkedBlockingQueue<>();
+  public static final LinkedBlockingQueue<String> scriptResultQueue = new LinkedBlockingQueue<>(1);
 
 
   private void startProxyVpn(Context context) {
