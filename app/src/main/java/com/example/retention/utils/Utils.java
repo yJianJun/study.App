@@ -65,7 +65,7 @@ public class Utils {
                 return;
             }
         }
-        Log.d("TAG", "writePackageName: "+packageName);
+        LogFileUtil.logAndWrite(Log.INFO,"TAG", "writePackageName: "+packageName, null);
         try (BufferedOutputStream bos = new BufferedOutputStream(
                 new FileOutputStream(file))) {
             bos.write(packageName.getBytes(StandardCharsets.UTF_8));
